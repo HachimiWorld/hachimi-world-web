@@ -49,7 +49,7 @@ function handleAvatarClick() {
     <div class="header-inner">
       <!-- PC端 Logo -->
       <div class="header-logo pc-only">
-        <span class="logo-text">Hachimi World</span>
+        <span class="logo-text">基米天堂</span>
       </div>
 
       <!-- 手机端汉堡菜单按钮 -->
@@ -76,7 +76,7 @@ function handleAvatarClick() {
       <div class="header-search">
         <el-input
           v-model="searchQuery"
-          placeholder="搜索歌曲、用户..."
+          placeholder="搜索歌曲、神人与歌单"
           class="search-input"
           @keyup.enter="handleSearch"
           clearable

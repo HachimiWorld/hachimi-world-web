@@ -16,17 +16,16 @@ export default defineConfig({
     },
   },
   define: {
-    // 生产环境 API 地址（开发环境通过 proxy 走 /api-proxy，见下方 server.proxy）
-    'import.meta.env.VITE_API_BASE_URL': JSON.stringify('https://api.hachimi.world/api'),
+    // 生产环境 API 地址
+    'import.meta.env.VITE_API_BASE_URL': JSON.stringify('https://api.hachimi.world'),
   },
   server: {
     proxy: {
-      // 开发环境代理：/api-proxy/* -> https://api.hachimi.world/api/*
-      // 绕过浏览器 CORS 限制
+      // 开发环境代理：/api-proxy/* -> https://api.hachimi.world/*
       '/api-proxy': {
         target: 'https://api.hachimi.world',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api-proxy/, '/api'),
+        rewrite: (path) => path.replace(/^\/api-proxy/, ''),
         secure: true,
       },
     },

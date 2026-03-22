@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import SongSection from '@/components/SongSection.vue'
 import type { Song, SearchSongItem, TagRecommendItem } from '@/api/song'
 import {
@@ -11,115 +11,55 @@ import {
 } from '@/api/song'
 import { ApiError } from '@/api/request'
 
-const PAGE_SIZE = 16
+const PAGE_SIZE = 12
 
 // ── 最近发布 ──
 const recentSongs = ref<Song[]>([])
 const recentLoading = ref(true)
-const recentLoadingMore = ref(false)
-const recentCursor = ref<string | undefined>(undefined)
-const recentHasMore = ref(true)
 
-async function loadRecent(more = false) {
-  if (more) {
-    recentLoadingMore.value = true
-  } else {
-    recentLoading.value = true
-    recentSongs.value = []
-    recentCursor.value = undefined
-    recentHasMore.value = true
-  }
+async function loadRecent() {
+  recentLoading.value = true
+  recentSongs.value = []
   try {
     const resp = await getRecentSongs({
-      cursor: recentCursor.value,
       limit: PAGE_SIZE,
       after: false,
     })
-    const songs = resp.songs
-    recentSongs.value = more ? [...recentSongs.value, ...songs] : songs
-    recentHasMore.value = songs.length === PAGE_SIZE
-    if (songs.length > 0) {
-      recentCursor.value = songs[songs.length - 1].create_time
-    }
+    recentSongs.value = resp.songs
   } catch (e) {
     console.error('加载最新歌曲失败', e instanceof ApiError ? e.msg : e)
   } finally {
     recentLoading.value = false
-    recentLoadingMore.value = false
   }
 }
 
 // ── 本周热门 ──
 const hotSongs = ref<Song[]>([])
 const hotLoading = ref(true)
-const hotLoadingMore = ref(false)
-const hotOffset = ref(0)
-const hotHasMore = ref(true)
 
-async function loadHot(more = false) {
-  if (more) {
-    hotLoadingMore.value = true
-  } else {
-    hotLoading.value = true
-    hotSongs.value = []
-    hotOffset.value = 0
-  }
+async function loadHot() {
+  hotLoading.value = true
+  hotSongs.value = []
   try {
     const resp = await getHotWeeklySongs()
-    // 后端一次返回最多 50 首，本地分页展示
-    const all = resp.songs
-    const start = more ? hotOffset.value : 0
-    const slice = all.slice(start, start + PAGE_SIZE)
-    hotSongs.value = more ? [...hotSongs.value, ...slice] : slice
-    hotOffset.value = (more ? hotOffset.value : 0) + slice.length
-    hotHasMore.value = hotOffset.value < all.length
-    // 缓存全量，避免重复请求
-    if (!more) _hotAllSongs.value = all
+    hotSongs.value = resp.songs.slice(0, PAGE_SIZE)
   } catch (e) {
     console.error('加载热门歌曲失败', e instanceof ApiError ? e.msg : e)
   } finally {
     hotLoading.value = false
-    hotLoadingMore.value = false
   }
-}
-
-const _hotAllSongs = ref<Song[]>([])
-
-async function loadMoreHot() {
-  if (_hotAllSongs.value.length === 0) return
-  hotLoadingMore.value = true
-  const start = hotOffset.value
-  const slice = _hotAllSongs.value.slice(start, start + PAGE_SIZE)
-  hotSongs.value = [...hotSongs.value, ...slice]
-  hotOffset.value += slice.length
-  hotHasMore.value = hotOffset.value < _hotAllSongs.value.length
-  hotLoadingMore.value = false
 }
 
 // ── 每日推荐 ──
 const recommendSongs = ref<Song[]>([])
 const recommendLoading = ref(true)
-const recommendLoadingMore = ref(false)
-const recommendOffset = ref(0)
-const recommendHasMore = ref(true)
-const _recommendAll = ref<Song[]>([])
 
-async function loadRecommend(more = false) {
-  if (more) {
-    hotLoadingMore.value = true
-  } else {
-    recommendLoading.value = true
-    recommendSongs.value = []
-    recommendOffset.value = 0
-  }
+async function loadRecommend() {
+  recommendLoading.value = true
+  recommendSongs.value = []
   try {
     const resp = await getRecommendSongs()
-    const all = resp.songs
-    _recommendAll.value = all
-    const slice = all.slice(0, PAGE_SIZE)
-    recommendSongs.value = slice
-    recommendOffset.value = slice.length
-    recommendHasMore.value = slice.length < all.length
+    recommendSongs.value = resp.songs.slice(0, PAGE_SIZE)
   } catch (e) {
     console.error('加载推荐歌曲失败', e instanceof ApiError ? e.msg : e)
   } finally {
@@ -127,18 +67,7 @@ async function loadRecommend(more = false) {
   }
 }
 
-async function loadMoreRecommend() {
-  recommendLoadingMore.value = true
-  const start = recommendOffset.value
-  const slice = _recommendAll.value.slice(start, start + PAGE_SIZE)
-  recommendSongs.value = [...recommendSongs.value, ...slice]
-  recommendOffset.value += slice.length
-  recommendHasMore.value = recommendOffset.value < _recommendAll.value.length
-  recommendLoadingMore.value = false
-}
-
 // ── 标签推荐 ──
-const tags = ref<TagRecommendItem[]>([])
 const tagsLoading = ref(true)
 
 interface TagSection {
@@ -148,33 +77,46 @@ interface TagSection {
   loadingMore: boolean
   offset: number
   hasMore: boolean
-  total: number | null
 }
 
 const tagSections = ref<TagSection[]>([])
+// 当前已加载的标签数量（用于滚动到底部时递增）
+const loadedTagCount = ref(0)
+const allTags = ref<TagRecommendItem[]>([])
+const INITIAL_TAG_COUNT = 3  // 初始展示标签数
+const TAG_BATCH = 2           // 每次滚动到底部追加标签数
 
 async function loadTags() {
   tagsLoading.value = true
   try {
     const resp = await getRecommendTags()
-    // 最多展示 5 个标签区块
-    tags.value = resp.result.slice(0, 5)
-    tagSections.value = tags.value.map((tag) => ({
+    allTags.value = resp.result
+    // 初始加载前 INITIAL_TAG_COUNT 个
+    await appendTags(INITIAL_TAG_COUNT)
+  } catch (e) {
+    console.error('加载推荐标签失败', e instanceof ApiError ? e.msg : e)
+  } finally {
+    tagsLoading.value = false
+  }
+}
+
+async function appendTags(count: number) {
+  const start = loadedTagCount.value
+  const end = Math.min(start + count, allTags.value.length)
+  for (let i = start; i < end; i++) {
+    const tag = allTags.value[i]
+    const section: TagSection = {
       tag,
       songs: [],
       loading: true,
       loadingMore: false,
       offset: 0,
       hasMore: true,
-      total: null,
-    }))
-    // 并行加载各标签的歌曲
-    tags.value.forEach((_, idx) => loadTagSongs(idx))
-  } catch (e) {
-    console.error('加载推荐标签失败', e instanceof ApiError ? e.msg : e)
-  } finally {
-    tagsLoading.value = false
+    }
+    tagSections.value.push(section)
+    loadTagSongs(tagSections.value.length - 1)
   }
+  loadedTagCount.value = end
 }
 
 async function loadTagSongs(idx: number, more = false) {
@@ -195,7 +137,6 @@ async function loadTagSongs(idx: number, more = false) {
     })
     section.songs = more ? [...section.songs, ...resp.hits] : resp.hits
     section.offset = (more ? section.offset : 0) + resp.hits.length
-    section.total = resp.total_hits
     section.hasMore = resp.hits.length === PAGE_SIZE
   } catch (e) {
     console.error(`加载标签「${section.tag.name}」歌曲失败`, e instanceof ApiError ? e.msg : e)
@@ -205,11 +146,35 @@ async function loadTagSongs(idx: number, more = false) {
   }
 }
 
+// ── 滚动到底部加载更多标签 ──
+let scrollTimer: ReturnType<typeof setTimeout> | null = null
+
+function onScroll() {
+  if (scrollTimer) return
+  scrollTimer = setTimeout(() => {
+    scrollTimer = null
+    const scrolled = window.scrollY + window.innerHeight
+    const total = document.documentElement.scrollHeight
+    // 距离底部 300px 时触发
+    if (total - scrolled < 300) {
+      if (loadedTagCount.value < allTags.value.length) {
+        appendTags(TAG_BATCH)
+      }
+    }
+  }, 150)
+}
+
 onMounted(() => {
   loadRecent()
   loadHot()
   loadRecommend()
   loadTags()
+  window.addEventListener('scroll', onScroll, { passive: true })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', onScroll)
+  if (scrollTimer) clearTimeout(scrollTimer)
 })
 </script>
 
@@ -220,10 +185,7 @@ onMounted(() => {
       title="最近发布"
       :songs="recentSongs"
       :loading="recentLoading"
-      :has-more="recentHasMore"
-      :loading-more="recentLoadingMore"
       more-route="/recent"
-      @load-more="loadRecent(true)"
     />
 
     <!-- 每日推荐 -->
@@ -231,10 +193,7 @@ onMounted(() => {
       title="每日推荐"
       :songs="recommendSongs"
       :loading="recommendLoading"
-      :has-more="recommendHasMore"
-      :loading-more="recommendLoadingMore"
       more-route="/recommend"
-      @load-more="loadMoreRecommend"
     />
 
     <!-- 本周热门 -->
@@ -242,10 +201,7 @@ onMounted(() => {
       title="本周热门"
       :songs="hotSongs"
       :loading="hotLoading"
-      :has-more="hotHasMore"
-      :loading-more="hotLoadingMore"
       more-route="/hot"
-      @load-more="loadMoreHot"
     />
 
     <!-- 标签推荐区块 -->
@@ -262,21 +218,37 @@ onMounted(() => {
       />
     </template>
 
-    <!-- 标签骨架占位 -->
+    <!-- 标签初始骨架占位 -->
     <template v-else>
       <SongSection
-        v-for="i in 3"
+        v-for="i in INITIAL_TAG_COUNT"
         :key="'tag-skel-' + i"
-        :title="''"
+        title=""
         :songs="[]"
         :loading="true"
       />
     </template>
+
+    <!-- 底部：还有更多标签可加载时的提示 -->
+    <div
+      v-if="!tagsLoading && loadedTagCount < allTags.length"
+      class="bottom-hint"
+    >
+      <span>继续向下滚动以加载更多</span>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .home-view {
   padding-top: 8px;
+}
+
+.bottom-hint {
+  text-align: center;
+  color: var(--hw-text-tertiary);
+  font-size: 12px;
+  padding: 16px 0 32px;
+  opacity: 0.6;
 }
 </style>

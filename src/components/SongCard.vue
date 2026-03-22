@@ -1,12 +1,13 @@
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import type { Song, SearchSongItem } from '@/api/song'
 
-// 兼容 Song 和 SearchSongItem 两种类型
 const props = defineProps<{
   song: Song | SearchSongItem
 }>()
 
-// 统一取字段（两种类型字段名不同）
+const router = useRouter()
+
 function getCoverUrl(): string {
   const s = props.song as any
   return s.cover_url || s.cover_art_url || ''
@@ -23,10 +24,14 @@ function formatCount(n: number): string {
   if (n >= 1000) return (n / 1000).toFixed(1) + 'k'
   return String(n)
 }
+
+function handleClick() {
+  router.push(`/song/${props.song.id}`)
+}
 </script>
 
 <template>
-  <div class="song-card">
+  <div class="song-card" @click="handleClick">
     <div class="card-cover">
       <img
         v-if="getCoverUrl()"
@@ -37,11 +42,6 @@ function formatCount(n: number): string {
       />
       <div v-else class="cover-placeholder">
         <el-icon><Headset /></el-icon>
-      </div>
-      <div class="cover-overlay">
-        <div class="play-btn">
-          <el-icon><VideoPlay /></el-icon>
-        </div>
       </div>
       <div class="duration-badge">{{ formatDuration(song.duration_seconds) }}</div>
       <div v-if="song.explicit" class="explicit-badge">E</div>
@@ -54,8 +54,9 @@ function formatCount(n: number): string {
           <el-icon><VideoPlay /></el-icon>
           {{ formatCount(song.play_count) }}
         </span>
-        <span class="meta-item">
-          <el-icon><Star /></el-icon>
+        <span class="meta-item like-item">
+          <!-- 正三角形，用 CSS border trick -->
+          <span class="triangle-icon"></span>
           {{ formatCount(song.like_count) }}
         </span>
       </div>
@@ -73,24 +74,26 @@ function formatCount(n: number): string {
   cursor: pointer;
   transition: transform 0.18s, box-shadow 0.18s;
   min-width: 0;
+  flex-shrink: 0;
 }
 
 .song-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
 }
 
 :root.dark .song-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
 }
 
-/* 封面 */
+/* 封面 - 强制 1:1 正方形 */
 .card-cover {
   position: relative;
   width: 100%;
   padding-bottom: 100%;
   background: var(--hw-bg-hover);
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .cover-img {
@@ -99,11 +102,12 @@ function formatCount(n: number): string {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   transition: transform 0.3s;
 }
 
 .song-card:hover .cover-img {
-  transform: scale(1.04);
+  transform: scale(1.05);
 }
 
 .cover-placeholder {
@@ -116,40 +120,6 @@ function formatCount(n: number): string {
   font-size: 2rem;
 }
 
-.cover-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.18s;
-}
-
-.song-card:hover .cover-overlay {
-  opacity: 1;
-}
-
-.play-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--theme-color);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 22px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
-  transform: scale(0.85);
-  transition: transform 0.15s;
-}
-
-.song-card:hover .play-btn {
-  transform: scale(1);
-}
-
 .duration-badge {
   position: absolute;
   bottom: 6px;
@@ -160,6 +130,7 @@ function formatCount(n: number): string {
   padding: 1px 5px;
   border-radius: 4px;
   letter-spacing: 0.3px;
+  pointer-events: none;
 }
 
 .explicit-badge {
@@ -173,6 +144,7 @@ function formatCount(n: number): string {
   padding: 1px 5px;
   border-radius: 3px;
   letter-spacing: 0.5px;
+  pointer-events: none;
 }
 
 /* 信息区 */
@@ -206,6 +178,7 @@ function formatCount(n: number): string {
   display: flex;
   gap: 10px;
   margin-top: 3px;
+  align-items: center;
 }
 
 .meta-item {
@@ -219,5 +192,15 @@ function formatCount(n: number): string {
 .meta-item .el-icon {
   font-size: 12px;
 }
-</style>
 
+/* 正三角点赞图标 */
+.triangle-icon {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 9px solid currentColor;
+  flex-shrink: 0;
+}
+</style>
