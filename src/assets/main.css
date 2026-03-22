@@ -92,6 +92,49 @@ button {
   color: var(--hw-text-primary);
 }
 
+/* ===== MessageBox 深色模式修复 ===== */
+:root.dark .el-message-box {
+  background: var(--hw-bg-secondary) !important;
+  border-color: var(--hw-border) !important;
+}
+
+:root.dark .el-message-box__title {
+  color: var(--hw-text-primary) !important;
+}
+
+:root.dark .el-message-box__message {
+  color: var(--hw-text-secondary) !important;
+}
+
+:root.dark .el-message-box__header {
+  background: var(--hw-bg-secondary) !important;
+}
+
+:root.dark .el-overlay-message-box {
+  background: rgba(0, 0, 0, 0.6) !important;
+}
+
+/* ===== Skeleton 骨架屏深色模式修复 ===== */
+:root.dark .el-skeleton__item {
+  background: linear-gradient(
+    90deg,
+    var(--hw-bg-hover) 25%,
+    var(--hw-border) 50%,
+    var(--hw-bg-hover) 75%
+  ) !important;
+  background-size: 400% 100% !important;
+}
+
+:root.dark .el-skeleton.is-animated .el-skeleton__item {
+  background: linear-gradient(
+    90deg,
+    var(--hw-bg-secondary) 25%,
+    var(--hw-bg-hover) 50%,
+    var(--hw-bg-secondary) 75%
+  ) !important;
+  background-size: 400% 100% !important;
+}
+
 :root.dark .el-dialog__title {
   color: var(--hw-text-primary);
 }
