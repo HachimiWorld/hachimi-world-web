@@ -51,7 +51,7 @@ function handleClick() {
       <p class="card-uploader">{{ song.uploader_name }}</p>
       <div class="card-meta">
         <span class="meta-item">
-          <el-icon><VideoPlay /></el-icon>
+          <el-icon><Headset /></el-icon>
           {{ formatCount(song.play_count) }}
         </span>
         <span class="meta-item like-item">
@@ -72,28 +72,26 @@ function handleClick() {
   border-radius: 10px;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.18s, box-shadow 0.18s;
+  transition: background 0.18s;
   min-width: 0;
   flex-shrink: 0;
+  padding: 6px;
+  gap: 0;
 }
 
 .song-card:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+  background: var(--hw-bg-hover);
 }
 
-:root.dark .song-card:hover {
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
-}
-
-/* 封面 - 强制 1:1 正方形 */
+/* 封面 - 强制 1:1 正方形，内缩有圆角 */
 .card-cover {
   position: relative;
   width: 100%;
   padding-bottom: 100%;
-  background: var(--hw-bg-hover);
+  background: var(--hw-bg-tertiary, var(--hw-bg-hover));
   overflow: hidden;
   flex-shrink: 0;
+  border-radius: 7px;
 }
 
 .cover-img {
@@ -103,11 +101,7 @@ function handleClick() {
   height: 100%;
   object-fit: cover;
   object-position: center;
-  transition: transform 0.3s;
-}
-
-.song-card:hover .cover-img {
-  transform: scale(1.05);
+  border-radius: 7px;
 }
 
 .cover-placeholder {

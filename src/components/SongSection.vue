@@ -120,7 +120,7 @@ function onGridMounted(el: HTMLElement | null) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 24px;
 }
 
 .section-title {
