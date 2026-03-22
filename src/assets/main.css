@@ -1,35 +1,116 @@
-@import './base.css';
+/* ===== 全局重置 ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Segoe UI', sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
+  width: 100%;
+  min-height: 100vh;
 }
 
-a,
-.green {
+a {
   text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
+  color: inherit;
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
+button {
+  font-family: inherit;
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
+/* ===== 布局常量 ===== */
+:root {
+  --hw-header-height: 56px;
+}
 
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
+/* ===== 浅色主题（默认）===== */
+:root {
+  --theme-color: #ff9800;
+  --theme-color-light: #ff980026;
+
+  --hw-bg-primary: #ffffff;
+  --hw-bg-secondary: #f5f5f5;
+  --hw-bg-header: rgba(255, 255, 255, 0.88);
+  --hw-bg-input: #f5f5f5;
+  --hw-bg-hover: rgba(0, 0, 0, 0.05);
+
+  --hw-text-primary: #1a1a1a;
+  --hw-text-secondary: #555555;
+  --hw-text-tertiary: #999999;
+
+  --hw-border: #e5e5e5;
+}
+
+/* ===== 深色主题 ===== */
+:root.dark {
+  --hw-bg-primary: #121212;
+  --hw-bg-secondary: #1e1e1e;
+  --hw-bg-header: rgba(18, 18, 18, 0.88);
+  --hw-bg-input: #2a2a2a;
+  --hw-bg-hover: rgba(255, 255, 255, 0.07);
+
+  --hw-text-primary: #ebebeb;
+  --hw-text-secondary: #aaaaaa;
+  --hw-text-tertiary: #666666;
+
+  --hw-border: #2e2e2e;
+}
+
+/* ===== 留白页通用样式 ===== */
+.page-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  color: var(--hw-text-tertiary);
+}
+
+.page-placeholder h1 {
+  font-size: 24px;
+  font-weight: 400;
+}
+
+/* ===== Element Plus 深色主题覆盖 ===== */
+:root.dark .el-dialog {
+  background: #1e1e1e;
+  color: var(--hw-text-primary);
+}
+
+:root.dark .el-dialog__title {
+  color: var(--hw-text-primary);
+}
+
+:root.dark .el-drawer {
+  background: var(--hw-bg-primary);
+}
+
+:root.dark .el-input__wrapper {
+  background-color: var(--hw-bg-input);
+  box-shadow: 0 0 0 1px var(--hw-border) inset;
+}
+
+:root.dark .el-input__inner {
+  color: var(--hw-text-primary);
+}
+
+:root.dark .el-button {
+  background: var(--hw-bg-secondary);
+  border-color: var(--hw-border);
+  color: var(--hw-text-primary);
 }
