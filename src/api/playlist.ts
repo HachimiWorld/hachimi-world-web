@@ -60,6 +60,32 @@ async function getToken(): Promise<string | undefined> {
   return token ?? undefined
 }
 
+export interface PlaylistMetadata {
+  id: number
+  name: string
+  cover_url: string | null
+  description: string | null
+  songs_count: number
+  user_id: number
+  user_name: string
+  is_public: boolean
+  create_time: string
+  update_time: string
+}
+
+export interface FavoritePlaylistItem {
+  metadata: PlaylistMetadata
+  order_index: number
+  add_time: string
+}
+
+export interface PageFavoritesResp {
+  data: FavoritePlaylistItem[]
+  page_index: number
+  page_size: number
+  total: number
+}
+
 export async function getMyPlaylists(): Promise<PlaylistListResp> {
   const token = await getToken()
   return http.get<PlaylistListResp>('/playlist/list', token)
@@ -150,4 +176,9 @@ export async function setPlaylistCover(playlistId: number, file: File): Promise<
   })
   const json = await res.json()
   if (!json.ok) throw new (await import('./request')).ApiError(json.data.code, json.data.msg)
+}
+
+export async function pageFavoritePlaylists(pageIndex: number, pageSize: number): Promise<PageFavoritesResp> {
+  const token = await getToken()
+  return http.get<PageFavoritesResp>(`/playlist/favorite/page?page_index=${pageIndex}&page_size=${pageSize}`, token)
 }
