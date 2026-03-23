@@ -20,7 +20,7 @@ void themeStore
       </RouterView>
     </main>
     <GlobalPlayerBar />
-  </div>
+    </div>
 </template>
 
 <style scoped>

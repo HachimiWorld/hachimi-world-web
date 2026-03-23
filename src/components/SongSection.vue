@@ -78,15 +78,22 @@ function onGridMounted(el: HTMLElement | null) {
           :key="i"
           class="skeleton-card"
         >
-          <el-skeleton animated>
-            <template #template>
-              <el-skeleton-item variant="image" class="skel-cover" />
-              <div class="skel-info">
-                <el-skeleton-item variant="p" style="width: 80%" />
-                <el-skeleton-item variant="p" style="width: 55%; margin-top: 6px" />
-              </div>
-            </template>
-          </el-skeleton>
+          <div class="skel-cover-wrap">
+            <el-skeleton animated>
+              <template #template>
+                <el-skeleton-item variant="image" class="skel-cover" />
+              </template>
+            </el-skeleton>
+          </div>
+          <div class="skel-info">
+            <el-skeleton animated>
+              <template #template>
+                <el-skeleton-item variant="p" style="width: 85%" />
+                <el-skeleton-item variant="p" style="width: 55%; margin-top: 5px" />
+                <el-skeleton-item variant="text" style="width: 70%; margin-top: 7px" />
+              </template>
+            </el-skeleton>
+          </div>
         </div>
       </div>
 
@@ -225,10 +232,20 @@ function onGridMounted(el: HTMLElement | null) {
   border-radius: 2px;
 }
 
-/* ── 骨架屏卡片 ── */
+/* ── 骨架屏卡片：完全匹配 SongCard 结构 ── */
 .skeleton-card {
   background: var(--hw-bg-secondary);
   border-radius: 10px;
+  overflow: hidden;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.skel-cover-wrap {
+  width: 100%;
+  border-radius: 7px;
   overflow: hidden;
 }
 
@@ -237,10 +254,10 @@ function onGridMounted(el: HTMLElement | null) {
   display: block;
 }
 
-:deep(.el-skeleton__image) {
+:deep(.skel-cover-wrap .el-skeleton__image) {
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 0;
+  border-radius: 7px;
 }
 
 .skel-info {

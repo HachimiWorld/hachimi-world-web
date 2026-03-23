@@ -56,9 +56,16 @@ async function onAvatarSelected(e: Event) {
     await setUserAvatar(file)
     ElMessage.success('头像已更新')
     await loadProfile()
-    // 同步 userStore 头像
-    if (userStore.userInfo && profile.value) {
-      userStore.userInfo.avatar_url = profile.value.avatar_url
+    // loadProfile 完成后同步 userStore 头像，AppHeader 自动响应
+    if (userStore.userInfo && profile.value?.avatar_url !== undefined) {
+      const newAvatarUrl = profile.value.avatar_url
+      userStore.userInfo = { ...userStore.userInfo, avatar_url: newAvatarUrl }
+      // 同步持久化到 localStorage，刷新后 restoreSession 仍能读到正确头像
+      if (newAvatarUrl) {
+        localStorage.setItem('hachimi_avatar_url', newAvatarUrl)
+      } else {
+        localStorage.removeItem('hachimi_avatar_url')
+      }
     }
   } catch (e) {
     ElMessage.error(e instanceof ApiError ? e.msg : '上传失败')

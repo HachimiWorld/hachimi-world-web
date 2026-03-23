@@ -4,6 +4,7 @@ import { ElMessage } from 'element-plus'
 import { ApiError } from '@/api/request'
 import * as authApi from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
+import { getUserProfile } from '@/api/song'
 
 const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{
@@ -141,6 +142,19 @@ async function handleLogin() {
     })
     ElMessage.success(`欢迎回来，${resp.username}！`)
     emit('update:modelValue', false)
+    // 异步获取头像 URL 并持久化（不阻塞登录流程）
+    getUserProfile(resp.uid).then(profile => {
+      if (profile.avatar_url) {
+        authStore.saveSession({
+          uid: resp.uid,
+          username: resp.username,
+          avatar_url: profile.avatar_url,
+          access_token: authStore.accessToken!,
+          refresh_token: authStore.refreshTokenVal!,
+          expires_in: authStore.tokenExpires!,
+        })
+      }
+    }).catch(() => { /* 获取头像失败不影响登录 */ })
   } catch (e) {
     errorMsg.value = e instanceof ApiError
       ? (errorCodeMap[e.code] ?? e.msg)
