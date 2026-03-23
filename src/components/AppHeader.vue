@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import MobileSidebar from './MobileSidebar.vue'
@@ -12,7 +12,7 @@ const userStore = useUserStore()
 
 const sidebarOpen = ref(false)
 const loginDialogOpen = ref(false)
-const searchQuery = ref('')
+const searchQuery = ref(typeof route.query.q === 'string' ? route.query.q : '')
 
 const navItems = [
   { label: '首页', path: '/' },
@@ -30,10 +30,20 @@ function isActive(path: string) {
 }
 
 function handleSearch() {
-  if (searchQuery.value.trim()) {
-    console.log('search:', searchQuery.value)
-  }
+  const q = searchQuery.value.trim()
+  if (!q) return
+  router.push({
+    path: '/search',
+    query: { q },
+  })
 }
+
+watch(
+  () => route.query.q,
+  (q) => {
+    searchQuery.value = typeof q === 'string' ? q : ''
+  },
+)
 
 function handleAvatarClick() {
   if (userStore.isLoggedIn && userStore.userInfo) {
