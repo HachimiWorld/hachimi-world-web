@@ -490,13 +490,21 @@ const deviceName = computed(() => authStore.deviceName)
   flex-shrink: 0;
 }
 
-/* switch 图标颜色 - 始终白色（在有色背景上） */
-.dark-switch :deep(.el-switch__action) {
-  color: var(--hw-text-primary);
+/* switch 图标颜色 */
+.dark-switch :deep(.el-switch__action .el-icon),
+.dark-switch :deep(.el-switch__action .el-icon svg),
+.dark-switch :deep(.el-switch__inner .el-icon),
+.dark-switch :deep(.el-switch__inner .el-icon svg) {
+  color: var(--theme-color) !important;
+  fill: currentColor !important;
 }
 
-.dark-switch :deep(.el-switch__inner .el-icon) {
-  color: #fff;
+.dark-switch.is-checked :deep(.el-switch__action .el-icon),
+.dark-switch.is-checked :deep(.el-switch__action .el-icon svg),
+.dark-switch.is-checked :deep(.el-switch__inner .el-icon),
+.dark-switch.is-checked :deep(.el-switch__inner .el-icon svg) {
+  color: var(--theme-color) !important;
+  fill: currentColor !important;
 }
 
 /* switch 标签文字颜色 */

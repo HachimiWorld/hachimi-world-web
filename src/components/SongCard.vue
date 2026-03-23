@@ -44,7 +44,6 @@ function handleClick() {
         <el-icon><Headset /></el-icon>
       </div>
       <div class="duration-badge">{{ formatDuration(song.duration_seconds) }}</div>
-      <div v-if="song.explicit" class="explicit-badge">E</div>
     </div>
     <div class="card-info">
       <p class="card-title" :title="song.title">{{ song.title }}</p>

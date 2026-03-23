@@ -534,6 +534,14 @@ async function handleReset() {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
+:root.dark .tab-bar {
+  background: var(--hw-bg-primary);
+}
+
+:root.dark .tab-btn.active {
+  background: var(--hw-bg-secondary);
+}
+
 /* 错误条 */
 .error-bar {
   display: flex;
@@ -652,8 +660,19 @@ async function handleReset() {
   font-size: 18px;
 }
 
-:deep(.el-dialog__headerbtn .el-dialog__close) {
-  color: var(--hw-text-tertiary);
+:deep(.el-dialog__headerbtn .el-dialog__close),
+:deep(.el-dialog__headerbtn .el-dialog__close svg) {
+  color: var(--hw-text-tertiary) !important;
+  fill: currentColor !important;
+  transition: color 0.15s ease;
+}
+
+:deep(.el-dialog__headerbtn:hover .el-dialog__close),
+:deep(.el-dialog__headerbtn:hover .el-dialog__close svg),
+:deep(.el-dialog__headerbtn:focus-visible .el-dialog__close),
+:deep(.el-dialog__headerbtn:focus-visible .el-dialog__close svg) {
+  color: var(--theme-color) !important;
+  fill: currentColor !important;
 }
 
 :deep(.el-dialog__body) {

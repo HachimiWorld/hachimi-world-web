@@ -59,21 +59,36 @@ function handleAvatarClick() {
         <span class="hamburger-line" />
       </button>
 
-      <!-- PC端导航 -->
-      <nav class="header-nav pc-only">
-        <RouterLink
-          v-for="item in navItems"
-          :key="item.path"
-          :to="item.path"
-          class="nav-link"
-          :class="{ active: isActive(item.path) }"
-        >
-          {{ item.label }}
-        </RouterLink>
-      </nav>
+      <!-- PC端：导航+搜索整体居中 -->
+      <div class="header-center pc-only">
+        <nav class="header-nav">
+          <RouterLink
+            v-for="item in navItems"
+            :key="item.path"
+            :to="item.path"
+            class="nav-link"
+            :class="{ active: isActive(item.path) }"
+          >
+            {{ item.label }}
+          </RouterLink>
+        </nav>
+        <div class="header-search">
+          <el-input
+            v-model="searchQuery"
+            placeholder="搜索歌曲、神人与歌单"
+            class="search-input"
+            @keyup.enter="handleSearch"
+            clearable
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+        </div>
+      </div>
 
-      <!-- 搜索框 -->
-      <div class="header-search">
+      <!-- 手机端搜索框 -->
+      <div class="header-search mobile-only">
         <el-input
           v-model="searchQuery"
           placeholder="搜索歌曲、神人与歌单"
@@ -137,21 +152,38 @@ function handleAvatarClick() {
   margin: 0 auto;
 }
 
+/* PC 端：导航+搜索作为一个整体居中 */
+.header-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+}
+
 /* Logo */
 .header-logo {
   flex-shrink: 0;
   margin-right: 8px;
+  display: flex;
+  align-items: center;
+  align-self: stretch;
 }
 
 .logo-text {
-  font-size: 17px;
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  font-size: 19px;
   font-weight: 700;
   color: var(--theme-color);
-  letter-spacing: -0.4px;
-  font-family: 'Georgia', serif;
+  letter-spacing: -0.3px;
+  font-family: 'Trebuchet MS', 'Segoe UI Rounded', 'Arial Rounded MT Bold', 'Microsoft YaHei', sans-serif;
   white-space: nowrap;
   cursor: default;
   user-select: none;
+  line-height: 1;
 }
 
 /* PC 导航 */
@@ -188,10 +220,9 @@ function handleAvatarClick() {
 
 /* 搜索框 */
 .header-search {
-  flex: 1;
-  min-width: 0;
-  max-width: 320px;
-  margin-left: auto;
+  min-width: 160px;
+  max-width: 280px;
+  width: 280px;
 }
 
 :deep(.search-input .el-input__wrapper) {
@@ -304,8 +335,11 @@ function handleAvatarClick() {
   }
 
   .header-search {
-    margin-left: 8px;
+    flex: 1;
+    min-width: 0;
     max-width: none;
+    width: auto;
+    margin-left: 8px;
   }
 
   .header-inner {
