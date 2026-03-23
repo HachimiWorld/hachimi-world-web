@@ -10,6 +10,7 @@ import {
   type PlaylistSongItem,
 } from '@/api/playlist'
 import { useAuthStore } from './auth'
+import { touchPlayHistory } from '@/api/history'
 
 export type PlayerPlayMode = 'sequence' | 'loop' | 'shuffle'
 export type PlayerTargetType = 'local' | 'cloud'
@@ -148,6 +149,7 @@ export const usePlayerStore = defineStore('player', () => {
   let applyingRemote = false
   let syncBound = false
   let lastTimeSync = 0
+  let lastReportedSongId: number | null = null
 
   function getTargetStorageKey(key = targetKey.value) {
     return `${TARGET_STATE_PREFIX}${key}`
@@ -451,6 +453,15 @@ export const usePlayerStore = defineStore('player', () => {
     isPlaying.value = true
     await syncAudioToState(0, true)
     persistState(true)
+    // 播放记录：单曲循环时不重复记录同一首
+    const songId = queue.value[index]?.songId
+    if (songId !== undefined) {
+      const isLoopSame = playMode.value === 'loop' && lastReportedSongId === songId
+      if (!isLoopSame) {
+        lastReportedSongId = songId
+        touchPlayHistory(songId).catch(() => undefined)
+      }
+    }
   }
 
   async function previous() {

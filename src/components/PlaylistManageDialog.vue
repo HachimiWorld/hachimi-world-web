@@ -120,6 +120,7 @@ watch(
       title="加入歌单"
       width="min(720px, calc(100vw - 24px))"
       class="playlist-manage-dialog"
+      align-center
     >
       <div class="playlist-manage-shell">
         <section class="create-panel">
@@ -334,14 +335,53 @@ watch(
   margin: 0 4px;
 }
 
-:deep(.playlist-manage-dialog .el-dialog) {
-  border-radius: 22px;
-  background: var(--hw-bg-primary);
+:global(.el-overlay-dialog:has(.playlist-manage-dialog)) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 12px;
+}
+
+:deep(.playlist-manage-dialog) {
+  margin: 0 !important;
+  border-radius: 28px !important;
+  overflow: hidden;
+  background: var(--hw-bg-primary) !important;
+}
+
+:deep(.playlist-manage-dialog .el-dialog__header),
+:deep(.playlist-manage-dialog .el-dialog__body),
+:deep(.playlist-manage-dialog .el-dialog__footer) {
+  background: transparent !important;
+}
+
+:deep(.playlist-manage-dialog .el-dialog__body) {
+  padding-top: 6px;
 }
 
 :deep(.playlist-manage-dialog .el-dialog__title) {
   color: var(--hw-text-primary);
   font-weight: 700;
+}
+
+:deep(.playlist-manage-dialog .el-input__wrapper),
+:deep(.playlist-manage-dialog .el-textarea__inner) {
+  background: var(--hw-bg-primary) !important;
+  box-shadow: 0 0 0 1px var(--hw-border) inset !important;
+}
+
+:deep(.playlist-manage-dialog .el-input__count),
+:deep(.playlist-manage-dialog .el-input__count-inner),
+:deep(.playlist-manage-dialog .el-textarea__count) {
+  background: transparent !important;
+}
+
+:deep(.playlist-manage-dialog .el-input__inner),
+:deep(.playlist-manage-dialog .el-textarea__inner),
+:deep(.playlist-manage-dialog .el-input__count),
+:deep(.playlist-manage-dialog .el-input__count-inner),
+:deep(.playlist-manage-dialog .el-textarea__count) {
+  color: var(--hw-text-primary) !important;
 }
 
 @media (max-width: 768px) {

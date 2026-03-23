@@ -318,7 +318,12 @@ onMounted(() => {
                   <span>标签</span>
                 </div>
                 <div class="tag-list">
-                  <span v-for="tag in song.tags" :key="tag.id" class="tag-chip">{{ tag.name }}</span>
+                  <button
+                    v-for="tag in song.tags"
+                    :key="tag.id"
+                    class="tag-chip tag-chip--clickable"
+                    @click="router.push({ path: '/search', query: { q: tag.name } })"
+                  >{{ tag.name }}</button>
                 </div>
               </div>
             </div>
@@ -635,6 +640,16 @@ onMounted(() => {
   color: var(--theme-color);
   font-size: 13px;
   font-weight: 700;
+  border: none;
+}
+
+.tag-chip--clickable {
+  cursor: pointer;
+  transition: background 0.15s ease, filter 0.15s ease;
+}
+
+.tag-chip--clickable:hover {
+  filter: brightness(0.82);
 }
 
 .lyrics-panel {

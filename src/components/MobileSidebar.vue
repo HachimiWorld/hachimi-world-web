@@ -40,7 +40,7 @@ function isActive(path: string) {
     class="mobile-sidebar-drawer"
   >
     <div class="sidebar-content">
-      <div class="sidebar-logo">Hachimi World</div>
+      <div class="sidebar-logo">基米天堂</div>
       <nav class="sidebar-nav">
         <button
           v-for="item in navItems"
@@ -68,12 +68,14 @@ function isActive(path: string) {
 
 .sidebar-logo {
   padding: 20px 20px 16px;
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 700;
   color: var(--theme-color);
   letter-spacing: -0.3px;
   border-bottom: 1px solid var(--hw-border);
-  font-family: 'Georgia', serif;
+  font-family: 'Trebuchet MS', 'Segoe UI Rounded', 'Arial Rounded MT Bold', 'Microsoft YaHei', sans-serif;
+  user-select: none;
+  line-height: 1;
 }
 
 .sidebar-nav {

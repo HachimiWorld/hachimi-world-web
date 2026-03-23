@@ -267,7 +267,7 @@ const deviceName = computed(() => authStore.deviceName)
 <style scoped>
 .settings-view {
   min-height: calc(100vh - var(--hw-header-height));
-  padding: 32px 16px 64px;
+  padding: 0 16px;
   background: var(--hw-bg-primary);
 }
 
@@ -544,7 +544,7 @@ const deviceName = computed(() => authStore.deviceName)
 /* 手机端 */
 @media (max-width: 520px) {
   .settings-view {
-    padding: 20px 12px 48px;
+    padding: 0 12px;
   }
 
   .settings-heading {
