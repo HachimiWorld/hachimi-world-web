@@ -605,6 +605,47 @@ export const usePlayerStore = defineStore('player', () => {
     await addSongToCloudPlaylistAndPlay(songId, target.playlistId)
   }
 
+  async function removeLocalSong(index: number) {
+    if (!isLocalTarget.value) return
+    if (index < 0 || index >= queue.value.length) return
+    const wasPlaying = isPlaying.value
+    const wasCurrentIndex = currentIndex.value
+    const newQueue = [...queue.value]
+    newQueue.splice(index, 1)
+    queue.value = newQueue
+
+    if (newQueue.length === 0) {
+      // 队列空了，停止播放
+      currentIndex.value = 0
+      isPlaying.value = false
+      if (audio) { audio.pause(); audio.src = '' }
+      persistState(true)
+      return
+    }
+
+    if (index < wasCurrentIndex) {
+      // 删除的在当前播放前面，currentIndex 往前移一位，继续播放当前歌
+      currentIndex.value = wasCurrentIndex - 1
+      persistState(true)
+    } else if (index === wasCurrentIndex) {
+      // 删除的就是当前正在播放的歌
+      // 让 index 保持（原来的下一首现在移到了这个位置）
+      // 如果已经超出范围则回到最后一首
+      const nextIndex = index < newQueue.length ? index : newQueue.length - 1
+      currentIndex.value = nextIndex
+      if (wasPlaying) {
+        await playAt(nextIndex)
+      } else {
+        // 不在播放，只切换当前歌曲指针
+        currentIndex.value = nextIndex
+        persistState(true)
+      }
+    } else {
+      // 删除的在当前播放后面，不影响 currentIndex
+      persistState(true)
+    }
+  }
+
   function clearPlayer(removePersisted = true) {
     const key = targetKey.value
     applySnapshot(createEmptyState())
@@ -658,6 +699,7 @@ export const usePlayerStore = defineStore('player', () => {
     closePanels,
     addSongToTargetAndPlay,
     addSongToCloudPlaylist,
+    removeLocalSong,
     clearPlayer,
   }
 })

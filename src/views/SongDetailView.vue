@@ -89,8 +89,8 @@ const infoRows = computed(() => {
     { label: '原作', value: originalWorkText.value },
     { label: '发行日期', value: formatDate(song.value.release_time) },
     { label: '时长', value: formatDuration(song.value.duration_seconds) },
-    { label: '播放量', value: formatCount(song.value.play_count) },
-    { label: '点赞量', value: formatCount(song.value.like_count) },
+    { label: '播放量', value: String(song.value.play_count ?? 0) },
+    { label: '点赞量', value: String(song.value.like_count ?? 0) },
   ]
 })
 
@@ -196,20 +196,30 @@ onMounted(() => {
   <div class="song-detail-view">
     <div class="song-detail-shell">
       <section v-if="loading" class="detail-loading-card">
-        <el-skeleton animated>
-          <template #template>
-            <div class="loading-hero">
-              <el-skeleton-item variant="image" class="loading-disc" />
-              <div class="loading-copy">
+        <div class="loading-hero">
+          <div class="cover-stage">
+            <div class="vinyl-shell">
+              <div class="vinyl-disc">
+                <div class="vinyl-ring ring-1"></div>
+                <div class="vinyl-ring ring-2"></div>
+                <div class="vinyl-ring ring-3"></div>
+                <div class="vinyl-core loading-core"></div>
+                <span class="disc-hole"></span>
+              </div>
+            </div>
+          </div>
+          <div class="loading-copy">
+            <el-skeleton animated>
+              <template #template>
                 <el-skeleton-item variant="h1" style="width: 48%" />
                 <el-skeleton-item variant="text" style="width: 68%; margin-top: 10px" />
                 <el-skeleton-item variant="text" style="width: 100%; margin-top: 22px" />
                 <el-skeleton-item variant="text" style="width: 92%; margin-top: 12px" />
                 <el-skeleton-item variant="text" style="width: 88%; margin-top: 12px" />
-              </div>
-            </div>
-          </template>
-        </el-skeleton>
+              </template>
+            </el-skeleton>
+          </div>
+        </div>
       </section>
 
       <section v-else-if="pageError" class="state-card error-state">
@@ -377,6 +387,24 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* 加载骨架唱片 */
+.loading-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 48px;
+}
+
+.loading-copy {
+  flex: 1;
+  padding-top: 24px;
+}
+
+/* 骨架唱片用主题色填充封面区域 */
+.vinyl-core.loading-core {
+  background: var(--theme-color);
+  display: block;
 }
 
 .vinyl-shell {

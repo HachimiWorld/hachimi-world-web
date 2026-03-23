@@ -16,6 +16,7 @@ import {
   Plus,
   Lock,
   Link,
+  Delete,
 } from '@element-plus/icons-vue'
 import { createPlaylist } from '@/api/playlist'
 import { usePlayerStore } from '@/stores/player'
@@ -355,6 +356,14 @@ async function handleCreateCloudPlaylist() {
               <span class="queue-song-meta">{{ item.uploaderName }}</span>
             </div>
             <span class="queue-duration">{{ formatDuration(item.durationSeconds) }}</span>
+            <button
+              v-if="playerStore.isLocalTarget"
+              class="queue-delete-btn"
+              title="从本地歌单移除"
+              @click.stop="playerStore.removeLocalSong(index)"
+            >
+              <el-icon><Delete /></el-icon>
+            </button>
           </button>
         </div>
         <div v-else class="queue-empty">这个歌单暂时没有歌曲。</div>
@@ -692,6 +701,34 @@ async function handleCreateCloudPlaylist() {
   background: var(--hw-bg-primary);
   cursor: pointer;
   text-align: left;
+  transition: border-color 0.15s ease;
+}
+
+.queue-item:hover .queue-delete-btn {
+  opacity: 1;
+}
+
+.queue-delete-btn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--hw-text-tertiary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  margin-left: auto;
+}
+
+.queue-delete-btn:hover {
+  background: color-mix(in srgb, #ef4444 15%, transparent);
+  color: #ef4444;
 }
 
 .mode-item,

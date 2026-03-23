@@ -47,6 +47,12 @@ export interface CreatePlaylistResp {
   id: number
 }
 
+export interface CheckFavoriteResp {
+  playlist_id: number
+  is_favorite: boolean
+  add_time: string | null
+}
+
 async function getToken(): Promise<string | undefined> {
   const authStore = useAuthStore()
   if (!authStore.isLoggedIn) return undefined
@@ -57,6 +63,11 @@ async function getToken(): Promise<string | undefined> {
 export async function getMyPlaylists(): Promise<PlaylistListResp> {
   const token = await getToken()
   return http.get<PlaylistListResp>('/playlist/list', token)
+}
+
+export async function getPlaylistDetail(playlistId: number): Promise<PlaylistDetailResp> {
+  const token = await getToken()
+  return http.get<PlaylistDetailResp>(`/playlist/detail?id=${playlistId}`, token)
 }
 
 export async function getPlaylistDetailPrivate(playlistId: number): Promise<PlaylistDetailResp> {
@@ -77,23 +88,66 @@ export async function createPlaylist(params: {
   const token = await getToken()
   return http.post<CreatePlaylistResp>(
     '/playlist/create',
-    {
-      name: params.name,
-      description: params.description ?? null,
-      is_public: params.is_public ?? false,
-    },
+    { name: params.name, description: params.description ?? null, is_public: params.is_public ?? false },
     token,
   )
 }
 
-export async function addSongToPlaylist(playlistId: number, songId: number): Promise<void> {
+export async function updatePlaylist(params: {
+  id: number
+  name: string
+  description?: string | null
+  is_public: boolean
+}): Promise<void> {
   const token = await getToken()
   return http.post<void>(
-    '/playlist/add_song',
-    {
-      playlist_id: playlistId,
-      song_id: songId,
-    },
+    '/playlist/update',
+    { id: params.id, name: params.name, description: params.description ?? null, is_public: params.is_public },
     token,
   )
+}
+
+export async function deletePlaylist(id: number): Promise<void> {
+  const token = await getToken()
+  return http.post<void>('/playlist/delete', { id }, token)
+}
+
+export async function addSongToPlaylist(playlistId: number, songId: number): Promise<void> {
+  const token = await getToken()
+  return http.post<void>('/playlist/add_song', { playlist_id: playlistId, song_id: songId }, token)
+}
+
+export async function removeSongFromPlaylist(playlistId: number, songId: number): Promise<void> {
+  const token = await getToken()
+  return http.post<void>('/playlist/remove_song', { playlist_id: playlistId, song_id: songId }, token)
+}
+
+export async function checkFavoritePlaylist(playlistId: number): Promise<CheckFavoriteResp> {
+  const token = await getToken()
+  return http.get<CheckFavoriteResp>(`/playlist/favorite/check?playlist_id=${playlistId}`, token)
+}
+
+export async function addFavoritePlaylist(playlistId: number): Promise<void> {
+  const token = await getToken()
+  return http.post<void>('/playlist/favorite/add', { playlist_id: playlistId }, token)
+}
+
+export async function removeFavoritePlaylist(playlistId: number): Promise<void> {
+  const token = await getToken()
+  return http.post<void>('/playlist/favorite/remove', { playlist_id: playlistId }, token)
+}
+
+export async function setPlaylistCover(playlistId: number, file: File): Promise<void> {
+  const authStore = useAuthStore()
+  const token = await authStore.ensureValidToken()
+  const form = new FormData()
+  form.append('json', JSON.stringify({ playlist_id: playlistId }))
+  form.append('file', file)
+  const res = await fetch(`${(await import('./config')).API_BASE_URL}/playlist/set_cover`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  })
+  const json = await res.json()
+  if (!json.ok) throw new (await import('./request')).ApiError(json.data.code, json.data.msg)
 }
