@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import { Headset, Warning, Male, Female, Avatar } from '@element-plus/icons-vue'
+import { useRoute, useRouter } from 'vue-router'
+import { Headset, Warning, Male, Female, Avatar, Tickets } from '@element-plus/icons-vue'
 import SongCard from '@/components/SongCard.vue'
 import { ApiError } from '@/api/request'
 import {
@@ -10,8 +10,22 @@ import {
   type Song,
   type UserProfile,
 } from '@/api/song'
+import { type PlaylistItem } from '@/api/playlist'
+import { http } from '@/api/request'
+import { useAuthStore } from '@/stores/auth'
+
+async function fetchPublicPlaylistsByUser(userId: number): Promise<PlaylistItem[]> {
+  const authStore = useAuthStore()
+  let token: string | undefined
+  if (authStore.isLoggedIn) {
+    token = (await authStore.ensureValidToken()) ?? undefined
+  }
+  const resp = await http.get<{ playlists: PlaylistItem[] }>(`/playlist/list_public_by_user?user_id=${userId}`, token)
+  return resp.playlists
+}
 
 const route = useRoute()
+const router = useRouter()
 
 const PAGE_SIZE = 12
 
@@ -24,6 +38,8 @@ const songs = ref<Song[]>([])
 const totalSongs = ref(0)
 const currentPage = ref(0)
 const pageError = ref('')
+const playlists = ref<PlaylistItem[]>([])
+const playlistsLoading = ref(false)
 
 function formatCount(n?: number | null) {
   if (!n) return '0'
@@ -96,10 +112,17 @@ async function loadPage() {
   songs.value = []
   totalSongs.value = 0
   currentPage.value = 0
+  playlists.value = []
 
   await Promise.all([
     loadProfile(),
     loadSongs(0),
+    (async () => {
+      playlistsLoading.value = true
+      try { playlists.value = await fetchPublicPlaylistsByUser(uid.value) }
+      catch { playlists.value = [] }
+      finally { playlistsLoading.value = false }
+    })(),
   ])
 }
 
@@ -221,6 +244,52 @@ onMounted(() => {
             />
           </div>
         </template>
+      </section>
+
+      <!-- 公开歌单 -->
+      <section v-if="playlistsLoading || playlists.length" class="works-panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">公开歌单</h2>
+            <p class="panel-subtitle">共 {{ playlists.length }} 个</p>
+          </div>
+        </div>
+        <div v-if="playlistsLoading" class="playlist-grid">
+          <div v-for="i in 3" :key="i" class="playlist-skeleton-card">
+            <el-skeleton animated>
+              <template #template>
+                <div class="pl-skel-inner">
+                  <el-skeleton-item variant="image" class="pl-skel-cover" />
+                  <div class="pl-skel-info">
+                    <el-skeleton-item variant="p" style="width:65%" />
+                    <el-skeleton-item variant="p" style="width:40%;margin-top:8px" />
+                    <el-skeleton-item variant="text" style="width:90%;margin-top:10px" />
+                  </div>
+                </div>
+              </template>
+            </el-skeleton>
+          </div>
+        </div>
+        <div v-else class="playlist-grid">
+          <div
+            v-for="pl in playlists"
+            :key="pl.id"
+            class="playlist-card"
+            @click="router.push('/playlist/' + pl.id)"
+          >
+            <div class="pl-cover-wrap">
+              <img v-if="pl.cover_url" :src="pl.cover_url" :alt="pl.name" class="pl-cover-img" />
+              <div v-else class="pl-cover-placeholder">♫</div>
+            </div>
+            <div class="pl-main">
+              <div class="pl-topline">
+                <span class="pl-name">{{ pl.name }}</span>
+                <span class="pl-count">{{ pl.songs_count }} 首</span>
+              </div>
+              <p class="pl-desc">{{ pl.description || '这个歌单还没有填写简介。' }}</p>
+            </div>
+          </div>
+        </div>
       </section>
     </div>
   </div>
@@ -427,6 +496,9 @@ onMounted(() => {
   .song-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+  .playlist-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 820px) {
@@ -452,9 +524,146 @@ onMounted(() => {
   .song-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .playlist-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.playlist-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.playlist-card,
+.playlist-skeleton-card {
+  display: flex;
+  gap: 14px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--hw-border);
+  border-radius: 16px;
+  background: var(--hw-bg-secondary);
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.playlist-card:hover {
+  background: var(--hw-bg-hover);
+  border-color: color-mix(in srgb, var(--theme-color) 30%, var(--hw-border));
+}
+
+.pl-cover-wrap {
+  flex-shrink: 0;
+  width: 80px;
+  height: 80px;
+}
+
+.pl-cover-img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+}
+
+.pl-cover-placeholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 10px;
+  background: var(--hw-bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hw-text-tertiary);
+  font-size: 26px;
+}
+
+.pl-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.pl-topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pl-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--hw-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.pl-count {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--hw-text-tertiary);
+}
+
+.pl-desc {
+  margin-top: 7px;
+  font-size: 12px;
+  color: var(--hw-text-secondary);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pl-skel-inner {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.pl-skel-cover {
+  flex-shrink: 0;
+  width: 80px;
+  height: 80px;
+  border-radius: 10px;
+}
+
+.pl-skel-info {
+  flex: 1;
+  padding-top: 4px;
+}
+
+:deep(.pl-skel-cover.el-skeleton__image) {
+  width: 80px;
+  height: 80px;
+  border-radius: 10px;
+}
+
+@media (max-width: 1100px) {
+  .playlist-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 820px) {
+  .playlist-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 520px) {
+  .playlist-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
   .user-view {
     padding: 16px 12px 28px;
   }

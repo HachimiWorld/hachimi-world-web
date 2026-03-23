@@ -605,6 +605,27 @@ export const usePlayerStore = defineStore('player', () => {
     await addSongToCloudPlaylistAndPlay(songId, target.playlistId)
   }
 
+  /** 把本地歌单替换为指定曲目列表并播放第一首（不管当前在播什么歌单） */
+  async function replaceLocalQueueAndPlay(songs: PlaylistSongItem[]) {
+    // 切换到本地歌单
+    targetKey.value = LOCAL_TARGET_KEY
+    playlistName.value = '本地歌单'
+    // 清空并填入新曲目
+    queue.value = songs.map(playlistSongToQueueItem)
+    currentIndex.value = 0
+    currentTime.value = 0
+    duration.value = queue.value[0]?.durationSeconds ?? 0
+    isPlaying.value = queue.value.length > 0
+    persistState(true)
+    if (audio) {
+      audio.pause()
+      audio.src = ''
+    }
+    if (queue.value.length > 0) {
+      await playAt(0)
+    }
+  }
+
   async function removeLocalSong(index: number) {
     if (!isLocalTarget.value) return
     if (index < 0 || index >= queue.value.length) return
@@ -699,6 +720,7 @@ export const usePlayerStore = defineStore('player', () => {
     closePanels,
     addSongToTargetAndPlay,
     addSongToCloudPlaylist,
+    replaceLocalQueueAndPlay,
     removeLocalSong,
     clearPlayer,
   }

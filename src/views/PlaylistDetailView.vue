@@ -86,6 +86,11 @@ async function playSong(song: PlaylistSongItem) {
   await playerStore.addSongToLocalAndPlay(song.song_id)
 }
 
+async function playAll() {
+  if (!detail.value?.songs.length) return
+  await playerStore.replaceLocalQueueAndPlay(detail.value.songs)
+}
+
 async function toggleFavorite() {
   if (!userStore.isLoggedIn) { loginDialogOpen.value = true; return }
   favoriteLoading.value = true
@@ -254,7 +259,7 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
 
           <div class="pd-actions">
             <template v-if="isOwner">
-              <button class="pd-btn primary" :disabled="!detail.songs.length" @click="playSong(detail.songs[0])">
+              <button class="pd-btn primary" :disabled="!detail.songs.length" @click="playAll">
                 <el-icon><CaretRight /></el-icon>播放全部
               </button>
               <button class="pd-btn" @click="openEditDialog">
@@ -265,7 +270,7 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
               </button>
             </template>
             <template v-else>
-              <button class="pd-btn primary" :disabled="!detail.songs.length" @click="playSong(detail.songs[0])">
+              <button class="pd-btn primary" :disabled="!detail.songs.length" @click="playAll">
                 <el-icon><CaretRight /></el-icon>播放全部
               </button>
               <button class="pd-btn" :class="{ favorited: isFavorited }" :disabled="favoriteLoading" @click="toggleFavorite">
