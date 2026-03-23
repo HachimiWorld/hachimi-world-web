@@ -3,6 +3,15 @@ import { useAuthStore } from '@/stores/auth'
 
 // ── 类型定义 ──
 
+export interface UserProfile {
+  uid: number
+  username: string
+  avatar_url: string | null
+  bio?: string | null
+  gender?: number | null
+  is_banned?: boolean
+}
+
 export interface SongTag {
   id: number
   name: string
@@ -167,5 +176,28 @@ export function getSongsByTag(params: {
   if (params.limit !== undefined) query.set('limit', String(params.limit))
   if (params.offset !== undefined) query.set('offset', String(params.offset))
   return http.get<SearchSongsResp>(`/song/search?${query.toString()}`)
+}
+
+export function getUserProfile(uid: number): Promise<UserProfile> {
+  return http.get<UserProfile>(`/user/profile?uid=${uid}`)
+}
+
+export interface UserSongsPageResp {
+  songs: Song[]
+  total: number
+  page: number
+  size: number
+}
+
+export function getSongsByUser(params: {
+  uid: number
+  page?: number
+  pageSize?: number
+}): Promise<UserSongsPageResp> {
+  const query = new URLSearchParams()
+  query.set('user_id', String(params.uid))
+  if (params.page !== undefined) query.set('page', String(params.page))
+  if (params.pageSize !== undefined) query.set('size', String(params.pageSize))
+  return http.get<UserSongsPageResp>(`/song/page_by_user?${query.toString()}`)
 }
 
