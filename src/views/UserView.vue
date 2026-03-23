@@ -1,18 +1,22 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Headset, Warning, Male, Female, Avatar, Tickets } from '@element-plus/icons-vue'
+import { Headset, Warning, Male, Female, Avatar, Tickets, Edit, Check, Close } from '@element-plus/icons-vue'
 import SongCard from '@/components/SongCard.vue'
 import { ApiError } from '@/api/request'
 import {
   getUserProfile,
   getSongsByUser,
+  updateUserProfile,
+  setUserAvatar,
   type Song,
   type UserProfile,
 } from '@/api/song'
 import { type PlaylistItem } from '@/api/playlist'
 import { http } from '@/api/request'
 import { useAuthStore } from '@/stores/auth'
+import { useUserStore } from '@/stores/user'
+import { ElMessage } from 'element-plus'
 
 async function fetchPublicPlaylistsByUser(userId: number): Promise<PlaylistItem[]> {
   const authStore = useAuthStore()
@@ -26,10 +30,82 @@ async function fetchPublicPlaylistsByUser(userId: number): Promise<PlaylistItem[
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
+const userStore = useUserStore()
 
 const PAGE_SIZE = 12
 
 const uid = computed(() => Number(route.params.uid))
+const isOwnProfile = computed(() => userStore.isLoggedIn && userStore.userInfo?.uid === uid.value)
+
+// ── 头像上传 ──
+const avatarInputRef = ref<HTMLInputElement | null>(null)
+const avatarUploading = ref(false)
+
+function triggerAvatarUpload() {
+  if (!isOwnProfile.value) return
+  avatarInputRef.value?.click()
+}
+
+async function onAvatarSelected(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  if (file.size > 8 * 1024 * 1024) { ElMessage.error('图片不能超过 8MB'); return }
+  avatarUploading.value = true
+  try {
+    await setUserAvatar(file)
+    ElMessage.success('头像已更新')
+    await loadProfile()
+    // 同步 userStore 头像
+    if (userStore.userInfo && profile.value) {
+      userStore.userInfo.avatar_url = profile.value.avatar_url
+    }
+  } catch (e) {
+    ElMessage.error(e instanceof ApiError ? e.msg : '上传失败')
+  } finally {
+    avatarUploading.value = false
+    if (avatarInputRef.value) avatarInputRef.value.value = ''
+  }
+}
+
+// ── 行内编辑 ──
+const editingField = ref<'username' | 'bio' | 'gender' | null>(null)
+const editValue = ref('')
+const editLoading = ref(false)
+
+function startEdit(field: 'username' | 'bio' | 'gender') {
+  if (!isOwnProfile.value) return
+  editingField.value = field
+  if (field === 'username') editValue.value = profile.value?.username ?? ''
+  else if (field === 'bio') editValue.value = profile.value?.bio ?? ''
+  else if (field === 'gender') editValue.value = String(profile.value?.gender ?? '')
+}
+
+function cancelEdit() {
+  editingField.value = null
+  editValue.value = ''
+}
+
+async function submitEdit() {
+  if (!profile.value) return
+  editLoading.value = true
+  try {
+    const username = editingField.value === 'username' ? editValue.value.trim() : profile.value.username
+    const bio = editingField.value === 'bio' ? (editValue.value.trim() || null) : (profile.value.bio ?? null)
+    const gender = editingField.value === 'gender'
+      ? (editValue.value === '' ? null : Number(editValue.value))
+      : (profile.value.gender ?? null)
+    await updateUserProfile({ username, bio, gender })
+    ElMessage.success('资料已更新')
+    editingField.value = null
+    await loadProfile()
+    if (userStore.userInfo) userStore.userInfo.username = profile.value?.username ?? userStore.userInfo.username
+  } catch (e) {
+    ElMessage.error(e instanceof ApiError ? e.msg : '更新失败')
+  } finally {
+    editLoading.value = false
+  }
+}
 
 const profileLoading = ref(true)
 const songsLoading = ref(true)
@@ -160,21 +236,75 @@ onMounted(() => {
 
         <div v-else-if="profile" class="profile-card">
           <div class="profile-main">
-            <div class="avatar-wrap">
+            <!-- 头像区域 -->
+            <div class="avatar-wrap" :class="{ 'is-owner': isOwnProfile }" @click="triggerAvatarUpload">
               <el-avatar
                 :size="104"
                 :src="profile.avatar_url ?? undefined"
                 class="profile-avatar"
+                :class="{ uploading: avatarUploading }"
               >
                 {{ profile.username?.[0] ?? '神' }}
               </el-avatar>
+              <div v-if="isOwnProfile" class="avatar-overlay">
+                <span v-if="avatarUploading" class="avatar-overlay-text">上传中…</span>
+                <span v-else class="avatar-overlay-text">更换头像</span>
+              </div>
+              <input
+                ref="avatarInputRef"
+                type="file"
+                accept="image/*"
+                style="display:none"
+                @change="onAvatarSelected"
+              />
             </div>
 
             <div class="profile-copy">
+              <!-- 昵称行内编辑 -->
               <div class="profile-heading-row">
-                <div>
-                  <h1 class="profile-name">{{ profile.username }}</h1>
-                  <p class="profile-subline">
+                <div class="profile-name-block">
+                  <template v-if="editingField === 'username'">
+                    <div class="inline-edit-row">
+                      <el-input
+                        v-model="editValue"
+                        size="large"
+                        maxlength="10"
+                        show-word-limit
+                        class="inline-edit-input name-input"
+                        @keyup.enter="submitEdit"
+                        @keyup.esc="cancelEdit"
+                      />
+                      <button class="inline-edit-btn confirm" :disabled="editLoading" @click="submitEdit"><el-icon><Check /></el-icon></button>
+                      <button class="inline-edit-btn cancel" @click="cancelEdit"><el-icon><Close /></el-icon></button>
+                    </div>
+                  </template>
+                  <h1
+                    v-else
+                    class="profile-name"
+                    :class="{ editable: isOwnProfile }"
+                    :title="isOwnProfile ? '点击修改昵称' : ''"
+                    @click="startEdit('username')"
+                  >{{ profile.username }}</h1>
+
+                  <!-- 性别行 -->
+                  <template v-if="editingField === 'gender'">
+                    <div class="inline-edit-row" style="margin-top:6px">
+                      <el-select v-model="editValue" size="small" style="width:110px">
+                        <el-option label="神没有性别" value="" />
+                        <el-option label="男人" value="0" />
+                        <el-option label="女人" value="1" />
+                      </el-select>
+                      <button class="inline-edit-btn confirm" :disabled="editLoading" @click="submitEdit"><el-icon><Check /></el-icon></button>
+                      <button class="inline-edit-btn cancel" @click="cancelEdit"><el-icon><Close /></el-icon></button>
+                    </div>
+                  </template>
+                  <p
+                    v-else
+                    class="profile-subline"
+                    :class="{ editable: isOwnProfile }"
+                    :title="isOwnProfile ? '点击修改性别' : ''"
+                    @click="isOwnProfile ? startEdit('gender') : undefined"
+                  >
                     UID {{ profile.uid }}
                     <span class="subline-dot">·</span>
                     <el-icon class="gender-icon"><component :is="genderIcon" /></el-icon>
@@ -183,10 +313,33 @@ onMounted(() => {
                 </div>
               </div>
 
-              <p class="profile-bio">{{ getDescription() }}</p>
+              <!-- 签名行内编辑 -->
+              <template v-if="editingField === 'bio'">
+                <div class="inline-edit-col" style="margin-top:12px">
+                  <el-input
+                    v-model="editValue"
+                    type="textarea"
+                    :rows="2"
+                    maxlength="300"
+                    show-word-limit
+                    placeholder="写点什么介绍自己…"
+                    @keyup.esc="cancelEdit"
+                  />
+                  <div class="inline-edit-row" style="margin-top:6px">
+                    <button class="inline-edit-btn confirm" :disabled="editLoading" @click="submitEdit"><el-icon><Check /></el-icon>保存</button>
+                    <button class="inline-edit-btn cancel" @click="cancelEdit"><el-icon><Close /></el-icon>取消</button>
+                  </div>
+                </div>
+              </template>
+              <p
+                v-else
+                class="profile-bio"
+                :class="{ editable: isOwnProfile }"
+                :title="isOwnProfile ? '点击修改签名' : ''"
+                @click="isOwnProfile ? startEdit('bio') : undefined"
+              >{{ getDescription() }}</p>
             </div>
           </div>
-
         </div>
       </section>
 
@@ -342,6 +495,120 @@ onMounted(() => {
 .profile-avatar {
   border: 3px solid color-mix(in srgb, var(--theme-color) 28%, transparent);
   box-shadow: 0 14px 30px color-mix(in srgb, var(--theme-color) 18%, transparent);
+  transition: filter 0.18s ease;
+}
+
+.avatar-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 104px;
+  height: 104px;
+}
+
+.avatar-wrap.is-owner {
+  cursor: pointer;
+}
+
+.avatar-wrap.is-owner:hover .profile-avatar {
+  filter: brightness(0.55);
+}
+
+.avatar-wrap.is-owner:hover .avatar-overlay {
+  opacity: 1;
+}
+
+.avatar-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  pointer-events: none;
+}
+
+.avatar-overlay-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  text-align: center;
+  line-height: 1.3;
+  padding: 0 8px;
+}
+
+/* 行内编辑 */
+.profile-name.editable,
+.profile-subline.editable,
+.profile-bio.editable {
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.profile-name.editable:hover,
+.profile-subline.editable:hover,
+.profile-bio.editable:hover {
+  background: color-mix(in srgb, var(--theme-color) 8%, transparent);
+}
+
+.profile-name-block {
+  min-width: 0;
+}
+
+.inline-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.inline-edit-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.inline-edit-input.name-input {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.inline-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--hw-border);
+  background: var(--hw-bg-secondary);
+  color: var(--hw-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.inline-edit-btn.confirm {
+  border-color: var(--theme-color);
+  background: var(--theme-color);
+  color: #fff;
+}
+
+.inline-edit-btn.confirm:hover {
+  background: color-mix(in srgb, var(--theme-color) 85%, #000);
+}
+
+.inline-edit-btn.cancel:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.inline-edit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .profile-copy {

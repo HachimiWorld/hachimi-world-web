@@ -215,3 +215,27 @@ export async function unlikeSong(songId: number): Promise<void> {
   return http.post<void>('/song/unlike', { song_id: songId }, token)
 }
 
+export async function updateUserProfile(params: {
+  username: string
+  bio?: string | null
+  gender?: number | null
+}): Promise<void> {
+  const token = await getToken()
+  return http.post<void>('/user/update_profile', params, token)
+}
+
+export async function setUserAvatar(file: File): Promise<void> {
+  const authStore = useAuthStore()
+  const token = await authStore.ensureValidToken()
+  const form = new FormData()
+  form.append('file', file)
+  const { API_BASE_URL } = await import('./config')
+  const res = await fetch(`${API_BASE_URL}/user/set_avatar`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  })
+  const json = await res.json()
+  if (!json.ok) throw new (await import('./request')).ApiError(json.data.code, json.data.msg)
+}
+
