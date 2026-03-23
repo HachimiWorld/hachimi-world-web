@@ -201,3 +201,17 @@ export function getSongsByUser(params: {
   return http.get<UserSongsPageResp>(`/song/page_by_user?${query.toString()}`)
 }
 
+export function getSongDetailById(id: number): Promise<Song> {
+  return http.get<Song>(`/song/detail_by_id?id=${id}`)
+}
+
+export async function likeSong(songId: number): Promise<void> {
+  const token = await getToken()
+  return http.post<void>('/song/like', { song_id: songId }, token)
+}
+
+export async function unlikeSong(songId: number): Promise<void> {
+  const token = await getToken()
+  return http.post<void>('/song/unlike', { song_id: songId }, token)
+}
+

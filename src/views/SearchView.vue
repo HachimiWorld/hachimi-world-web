@@ -39,9 +39,9 @@ const playlistHits = ref<PlaylistSearchItem[]>([])
 const keyword = computed(() => String(route.query.q ?? '').trim())
 
 const tabOptions: { id: SearchTab; label: string }[] = [
-  { id: 'music', label: '音乐搜索结果' },
-  { id: 'user', label: '用户搜索结果' },
-  { id: 'playlist', label: '歌单搜索结果' },
+  { id: 'music', label: '音乐' },
+  { id: 'user', label: '神人' },
+  { id: 'playlist', label: '歌单' },
 ]
 
 const sortOptions: { id: MusicSortBy; label: string }[] = [

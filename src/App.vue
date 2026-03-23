@@ -18,7 +18,7 @@ void themeStore
         </KeepAlive>
       </RouterView>
     </main>
-  </div>
+    </div>
 </template>
 
 <style scoped>
