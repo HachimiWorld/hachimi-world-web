@@ -4,12 +4,12 @@ import { ElMessage } from 'element-plus'
 import { FolderAdd, Check, Plus, Lock, Link } from '@element-plus/icons-vue'
 import { ApiError } from '@/api/request'
 import {
-  addSongToPlaylist,
   createPlaylist,
   getMyPlaylists,
   getPlaylistsContainingSong,
   type PlaylistItem,
 } from '@/api/playlist'
+import { usePlayerStore } from '@/stores/player'
 import { useUserStore } from '@/stores/user'
 import LoginDialog from './LoginDialog.vue'
 
@@ -23,6 +23,7 @@ const emit = defineEmits<{
 }>()
 
 const userStore = useUserStore()
+const playerStore = usePlayerStore()
 
 const loading = ref(false)
 const creating = ref(false)
@@ -71,7 +72,7 @@ async function handleCreate() {
       is_public: createIsPublic.value,
     })
 
-    await addSongToPlaylist(resp.id, props.songId)
+    await playerStore.addSongToCloudPlaylist(props.songId, resp.id)
     ElMessage.success('已创建歌单并加入歌曲')
     createName.value = ''
     createDescription.value = ''
@@ -91,7 +92,7 @@ async function handleAddToPlaylist(playlist: PlaylistItem) {
   }
 
   try {
-    await addSongToPlaylist(playlist.id, props.songId)
+    await playerStore.addSongToCloudPlaylist(props.songId, playlist.id)
     containingIds.value = [...containingIds.value, playlist.id]
     ElMessage.success(`已加入《${playlist.name}》`)
   } catch (e) {

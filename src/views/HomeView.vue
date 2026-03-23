@@ -105,6 +105,7 @@ async function appendTags(count: number) {
   const end = Math.min(start + count, allTags.value.length)
   for (let i = start; i < end; i++) {
     const tag = allTags.value[i]
+    if (!tag) continue
     const section: TagSection = {
       tag,
       songs: [],

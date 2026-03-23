@@ -3,7 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
-  VideoPlay,
+  CaretRight,
   Pointer,
   Plus,
   Share,
@@ -16,12 +16,14 @@ import {
 } from '@element-plus/icons-vue'
 import { ApiError } from '@/api/request'
 import { getSongDetailById, likeSong, unlikeSong, type Song } from '@/api/song'
+import { usePlayerStore } from '@/stores/player'
 import { useUserStore } from '@/stores/user'
 import LoginDialog from '@/components/LoginDialog.vue'
 import PlaylistManageDialog from '@/components/PlaylistManageDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
+const playerStore = usePlayerStore()
 const userStore = useUserStore()
 
 const loading = ref(true)
@@ -74,6 +76,11 @@ const lyricLines = computed(() => {
     .filter(Boolean)
 })
 
+const isCurrentSongPlaying = computed(() => {
+  if (!song.value || !playerStore.currentSong) return false
+  return playerStore.currentSong.songId === song.value.id && playerStore.isPlaying
+})
+
 const infoRows = computed(() => {
   if (!song.value) return []
   return [
@@ -117,8 +124,16 @@ function requireLogin(action: () => void | Promise<void>) {
   void action()
 }
 
-function handlePlayPlaceholder() {
-  ElMessage.info('播放功能稍后接入')
+async function handlePlay() {
+  if (!song.value) return
+  try {
+    const localTarget = playerStore.availableTargets.find((item) => item.type === 'local')
+    if (!localTarget) return
+    await playerStore.addSongToTargetAndPlay(song.value.id, localTarget)
+    ElMessage.success('已加入本地歌单并开始播放')
+  } catch (e) {
+    ElMessage.error(e instanceof ApiError ? e.msg : '加入本地歌单失败')
+  }
 }
 
 async function handleLike() {
@@ -207,7 +222,7 @@ onMounted(() => {
           <div class="left-column">
             <div class="cover-stage">
               <div class="vinyl-shell">
-                <div class="vinyl-disc">
+                <div class="vinyl-disc" :class="{ spinning: isCurrentSongPlaying }">
                   <div class="vinyl-ring ring-1"></div>
                   <div class="vinyl-ring ring-2"></div>
                   <div class="vinyl-ring ring-3"></div>
@@ -260,8 +275,8 @@ onMounted(() => {
               </div>
 
               <div class="action-row">
-                <button class="action-btn primary" @click="handlePlayPlaceholder">
-                  <el-icon><VideoPlay /></el-icon>
+                <button class="action-btn primary" @click="handlePlay">
+                  <el-icon class="detail-play-icon"><CaretRight /></el-icon>
                   播放
                 </button>
                 <button class="action-btn" :class="{ liked: liked }" :disabled="likeLoading" @click="handleLike">
@@ -372,9 +387,14 @@ onMounted(() => {
   background:
     radial-gradient(circle at center, #151515 0 13%, #090909 13% 20%, #0f0f0f 20% 46%, #050505 46% 56%, #0b0b0b 56% 100%);
   box-shadow:
-    0 24px 60px rgba(0, 0, 0, 0.28),
     inset 0 0 0 1px rgba(255, 255, 255, 0.06),
     inset 0 0 24px rgba(255, 255, 255, 0.04);
+  animation: vinyl-spin 6s linear infinite;
+  animation-play-state: paused;
+}
+
+.vinyl-disc.spinning {
+  animation-play-state: running;
 }
 
 .vinyl-ring {
@@ -421,6 +441,15 @@ onMounted(() => {
   border-radius: 50%;
   background: #101010;
   box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.08);
+}
+
+@keyframes vinyl-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .hero-main {
@@ -520,6 +549,11 @@ onMounted(() => {
   background: var(--theme-color);
   border-color: var(--theme-color);
   color: #fff;
+}
+
+.detail-play-icon {
+  font-size: 18px;
+  transform: translateX(1px);
 }
 
 .action-btn.liked {

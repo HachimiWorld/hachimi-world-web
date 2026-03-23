@@ -12,6 +12,29 @@ export interface PlaylistItem {
   songs_count: number
 }
 
+export interface PlaylistSongItem {
+  song_id: number
+  song_display_id: string
+  title: string
+  subtitle: string
+  cover_url: string
+  uploader_name: string
+  uploader_uid: number
+  duration_seconds: number
+  order_index: number
+  add_time: string
+}
+
+export interface PlaylistDetailResp {
+  playlist_info: PlaylistItem
+  songs: PlaylistSongItem[]
+  creator_profile: {
+    uid: number
+    username: string
+    avatar_url: string | null
+  }
+}
+
 export interface PlaylistListResp {
   playlists: PlaylistItem[]
 }
@@ -34,6 +57,11 @@ async function getToken(): Promise<string | undefined> {
 export async function getMyPlaylists(): Promise<PlaylistListResp> {
   const token = await getToken()
   return http.get<PlaylistListResp>('/playlist/list', token)
+}
+
+export async function getPlaylistDetailPrivate(playlistId: number): Promise<PlaylistDetailResp> {
+  const token = await getToken()
+  return http.get<PlaylistDetailResp>(`/playlist/detail_private?id=${playlistId}`, token)
 }
 
 export async function getPlaylistsContainingSong(songId: number): Promise<PlaylistContainingResp> {
@@ -69,4 +97,3 @@ export async function addSongToPlaylist(playlistId: number, songId: number): Pro
     token,
   )
 }
-
