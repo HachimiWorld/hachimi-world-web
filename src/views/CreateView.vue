@@ -910,11 +910,11 @@ onMounted(async () => {
   transition: all 0.2s;
 }
 .type-btn.active {
-  background: var(--hw-accent);
-  border-color: var(--hw-accent);
-  color: #fff;
+  background: transparent;
+  border-color: var(--theme-color);
+  color: var(--theme-color);
 }
-.type-btn:hover:not(.active) { border-color: var(--hw-accent); color: var(--hw-accent); }
+.type-btn:hover:not(.active) { border-color: var(--theme-color); color: var(--theme-color); }
 .origin-section { border-top: 1px solid var(--hw-border); padding-top: 14px; margin-top: 4px; }
 
 /* Crew */
@@ -1076,6 +1076,12 @@ onMounted(async () => {
 }
 .jmid-prefix-input { width: 80px; flex-shrink: 0; font-family: monospace; }
 .jmid-num-input { width: 80px; flex-shrink: 0; font-family: monospace; }
+/* 隐藏 number input 的上下箭头背景（深色模式下默认白色很突兀） */
+.jmid-num-input::-webkit-inner-spin-button,
+.jmid-num-input::-webkit-outer-spin-button {
+  background: transparent;
+  opacity: 0.5;
+}
 .jmid-status {
   font-size: 0.78rem;
   white-space: nowrap;

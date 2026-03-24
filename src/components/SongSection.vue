@@ -260,6 +260,22 @@ function onGridMounted(el: HTMLElement | null) {
   border-radius: 7px;
 }
 
+/* 深色模式：隐藏 image 变体内部的 svg 图标，只保留背景动画 */
+:deep(.skel-cover-wrap .el-skeleton__image svg) {
+  display: none;
+}
+
+:deep(.skel-cover-wrap .el-skeleton__image) {
+  background: linear-gradient(
+    90deg,
+    var(--hw-bg-secondary) 25%,
+    var(--hw-bg-hover) 50%,
+    var(--hw-bg-secondary) 75%
+  );
+  background-size: 400% 100%;
+  animation: el-skeleton-loading 1.4s ease infinite;
+}
+
 .skel-info {
   padding: 8px 10px 10px;
 }

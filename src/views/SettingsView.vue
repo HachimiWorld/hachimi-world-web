@@ -127,7 +127,7 @@ onMounted(async () => {
             :inactive-icon="Sunny"
             size="large"
             class="dark-switch"
-            style="--el-switch-on-color: var(--theme-color); --el-switch-off-color: var(--hw-border)"
+            style="--el-switch-on-color: var(--theme-color); --el-switch-off-color: var(--hw-border); --el-switch-on-text-color: var(--theme-color); --el-switch-off-text-color: var(--theme-color)"
           />
         </div>
 
@@ -521,21 +521,21 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 
-/* switch 图标颜色 */
-.dark-switch :deep(.el-switch__action .el-icon),
-.dark-switch :deep(.el-switch__action .el-icon svg),
-.dark-switch :deep(.el-switch__inner .el-icon),
-.dark-switch :deep(.el-switch__inner .el-icon svg) {
+/* switch 图标颜色：覆盖 label 里的 icon */
+.dark-switch :deep(.el-switch__label .el-icon) {
+  color: var(--theme-color) !important;
+}
+
+.dark-switch :deep(.el-switch__label .el-icon svg) {
   color: var(--theme-color) !important;
   fill: currentColor !important;
 }
 
-.dark-switch.is-checked :deep(.el-switch__action .el-icon),
-.dark-switch.is-checked :deep(.el-switch__action .el-icon svg),
-.dark-switch.is-checked :deep(.el-switch__inner .el-icon),
-.dark-switch.is-checked :deep(.el-switch__inner .el-icon svg) {
+/* Element Plus 会给非激活 label 加 display:none，激活 label 加 is-active
+   不管激活与否，只要是 dark-switch 的 label icon 都走主题色 */
+.dark-switch :deep(.el-switch__label--left),
+.dark-switch :deep(.el-switch__label--right) {
   color: var(--theme-color) !important;
-  fill: currentColor !important;
 }
 
 /* switch 标签文字颜色 */
@@ -557,6 +557,15 @@ onMounted(async () => {
   letter-spacing: 0.3px;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+/* color-picker 触发器边框透明 */
+:deep(.el-color-picker__trigger) {
+  border-color: transparent !important;
+  padding: 0;
+}
+:deep(.el-color-picker__color) {
+  border-color: transparent !important;
 }
 
 /* 动画 */

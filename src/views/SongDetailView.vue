@@ -828,7 +828,7 @@ onMounted(() => {
 }
 
 .detail-loading-card {
-  padding: 28px;
+  padding: 0;
 }
 
 .loading-hero {

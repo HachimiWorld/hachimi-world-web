@@ -197,3 +197,39 @@ button {
   border-color: var(--hw-border);
   color: var(--hw-text-primary);
 }
+
+/* ===== Dialog / MessageBox 关闭按钮悬浮主题色 ===== */
+.el-dialog__headerbtn:hover .el-dialog__close,
+.el-dialog__headerbtn:hover .el-dialog__close svg,
+.el-dialog__headerbtn:focus-visible .el-dialog__close,
+.el-dialog__headerbtn:focus-visible .el-dialog__close svg {
+  color: var(--theme-color) !important;
+  fill: currentColor !important;
+}
+
+.el-message-box__headerbtn:hover .el-message-box__close,
+.el-message-box__headerbtn:hover .el-message-box__close svg,
+.el-message-box__headerbtn:focus-visible .el-message-box__close,
+.el-message-box__headerbtn:focus-visible .el-message-box__close svg {
+  color: var(--theme-color) !important;
+  fill: currentColor !important;
+}
+
+/* 覆盖 Element Plus 内置的 --el-color-primary hover 色 */
+.el-dialog__headerbtn:hover,
+.el-message-box__headerbtn:hover {
+  --el-color-primary: var(--theme-color);
+}
+
+/* ===== Input / Textarea 字数统计背景透明 ===== */
+.el-input__count,
+.el-input__count-inner {
+  background: transparent !important;
+}
+
+/* ===== 深色模式 Textarea 背景色修复 ===== */
+:root.dark .el-textarea__inner {
+  background-color: var(--hw-bg-input) !important;
+  color: var(--hw-text-primary) !important;
+  box-shadow: 0 0 0 1px var(--hw-border) inset !important;
+}
