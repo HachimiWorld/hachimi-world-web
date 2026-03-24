@@ -5,6 +5,7 @@ import { useUserStore } from '@/stores/user'
 import MobileSidebar from './MobileSidebar.vue'
 import LoginDialog from './LoginDialog.vue'
 import { Search, UserFilled } from '@element-plus/icons-vue'
+import logoUrl from '@/assets/logo.png'
 
 const router = useRouter()
 const route = useRoute()
@@ -59,6 +60,13 @@ function handleAvatarClick() {
     <div class="header-inner">
       <!-- PC端 Logo -->
       <div class="header-logo pc-only">
+        <span
+          class="logo-img"
+          :style="{
+            webkitMaskImage: `url(${logoUrl})`,
+            maskImage: `url(${logoUrl})`,
+          }"
+        ></span>
         <span class="logo-text">基米天堂</span>
       </div>
 
@@ -179,6 +187,21 @@ function handleAvatarClick() {
   display: flex;
   align-items: center;
   align-self: stretch;
+}
+
+.logo-img {
+  display: inline-block;
+  height: 22px;
+  width: 22px;
+  flex-shrink: 0;
+  margin-right: 6px;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  background-color: var(--theme-color);
 }
 
 .logo-text {

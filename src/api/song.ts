@@ -239,3 +239,126 @@ export async function setUserAvatar(file: File): Promise<void> {
   if (!json.ok) throw new (await import('./request')).ApiError(json.data.code, json.data.msg)
 }
 
+// ── 发布模块 ──
+
+export interface UploadAudioResp {
+  temp_id: string
+  duration_secs: number
+  title: string | null
+  bitrate: string | null
+  artist: string | null
+}
+
+export async function uploadAudioFile(file: File): Promise<UploadAudioResp> {
+  const authStore = useAuthStore()
+  const token = await authStore.ensureValidToken()
+  const form = new FormData()
+  form.append('file', file)
+  const { API_BASE_URL } = await import('./config')
+  const res = await fetch(`${API_BASE_URL}/song/upload_audio_file`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  })
+  const json = await res.json()
+  if (!json.ok) throw new (await import('./request')).ApiError(json.data.code, json.data.msg)
+  return json.data as UploadAudioResp
+}
+
+export async function uploadCoverImage(file: File): Promise<{ temp_id: string }> {
+  const authStore = useAuthStore()
+  const token = await authStore.ensureValidToken()
+  const form = new FormData()
+  form.append('file', file)
+  const { API_BASE_URL } = await import('./config')
+  const res = await fetch(`${API_BASE_URL}/song/upload_cover_image`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  })
+  const json = await res.json()
+  if (!json.ok) throw new (await import('./request')).ApiError(json.data.code, json.data.msg)
+  return json.data as { temp_id: string }
+}
+
+export interface PublishSongReq {
+  song_temp_id: string
+  cover_temp_id: string
+  title: string
+  subtitle: string
+  description: string
+  lyrics: string
+  tag_ids: number[]
+  creation_info: {
+    creation_type: number
+    origin_info: null | { title: string | null; artist: string | null; url: string | null; origin_type: number; song_display_id: string | null }
+    derivative_info: null
+  }
+  production_crew: { role: string; uid: number | null; name: string | null }[]
+  external_links: { platform: string; url: string }[]
+  explicit: boolean
+  jmid: string | null
+  comment: string | null
+}
+
+export async function publishSong(req: PublishSongReq): Promise<{ review_id: number; song_display_id: string }> {
+  const token = await getToken()
+  return http.post('/song/publish', req, token)
+}
+
+export interface ReviewBrief {
+  review_id: number
+  display_id: string
+  title: string
+  subtitle: string
+  artist: string
+  cover_url: string
+  submit_time: string
+  review_time: string | null
+  review_comment: string | null
+  status: number  // 0=pending 1=approved 2=rejected
+  type: number    // 0=create 1=modify
+}
+
+export interface ReviewPageResp {
+  data: ReviewBrief[]
+  page_index: number
+  page_size: number
+  total: number
+}
+
+export async function getMyReviews(pageIndex = 0, pageSize = 20): Promise<ReviewPageResp> {
+  const token = await getToken()
+  return http.get<ReviewPageResp>(`/song/review/page_contributor?page_index=${pageIndex}&page_size=${pageSize}`, token)
+}
+
+export async function searchTags(query: string): Promise<{ result: { id: number; name: string; description: string | null }[] }> {
+  const token = await getToken()
+  return http.get(`/song/tag/search?query=${encodeURIComponent(query)}`, token)
+}
+
+export async function getNextJmid(): Promise<{ jmid: string }> {
+  const token = await getToken()
+  return http.get('/song/jmid/get_next', token)
+}
+
+export async function getMyJmidPrefix(): Promise<{ jmid_prefix: string | null }> {
+  const token = await getToken()
+  return http.get('/song/jmid/mine', token)
+}
+
+export async function createTag(name: string, description?: string): Promise<{ id: number }> {
+  const token = await getToken()
+  return http.post<{ id: number }>('/song/tag/create', { name, description: description ?? null }, token)
+}
+
+export async function checkJmidPrefix(jmidPrefix: string): Promise<{ result: boolean }> {
+  const token = await getToken()
+  return http.get<{ result: boolean }>(`/song/jmid/check_prefix?jmid_prefix=${encodeURIComponent(jmidPrefix)}`, token)
+}
+
+export async function checkJmid(jmidFull: string): Promise<{ result: boolean }> {
+  const token = await getToken()
+  return http.get<{ result: boolean }>(`/song/jmid/check?jmid=${encodeURIComponent(jmidFull)}`, token)
+}
+

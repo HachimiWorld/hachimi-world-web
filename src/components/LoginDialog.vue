@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ApiError } from '@/api/request'
 import * as authApi from '@/api/auth'
@@ -40,41 +40,67 @@ const errorCodeMap: Record<string, string> = {
   '2fa_required': '需要双因素认证',
 }
 
-// ── 人机验证 ──
+// ── 人机验证（iframe 内嵌模式）──
 // 流程：
 //   1. 调用 /auth/captcha/generate 拿到 captcha_key 和 url
-//   2. 新窗口打开 url（后端提供的 captcha.html 含 Cloudflare Turnstile widget）
-//   3. 用户完成后 captcha.html 自动调用 /auth/captcha/submit 并关闭窗口
-//   4. 前端检测到窗口关闭，标记已完成（后端在登录/注册时再次校验 captcha_key）
+//   2. 在表单内用 <iframe> 加载 captcha 页面
+//   3. captcha.html 验证成功后通过 postMessage 通知父窗口
+//   4. 父窗口监听到 captcha_success，标记已完成
 const captchaKey = ref('')
 const captchaVerified = ref(false)
 const captchaLoading = ref(false)
+const captchaIframeUrl = ref('')
+const captchaVisible = ref(false)
 
 async function openCaptcha() {
   captchaLoading.value = true
   captchaKey.value = ''
   captchaVerified.value = false
+  captchaIframeUrl.value = ''
+  captchaVisible.value = false
   errorMsg.value = ''
   try {
     const resp = await authApi.generateCaptcha()
     captchaKey.value = resp.captcha_key
-    const win = window.open(
-      resp.url,
-      '_blank',
-      'width=500,height=400,menubar=no,toolbar=no,location=no,status=no',
-    )
-    const timer = setInterval(() => {
-      if (win && win.closed) {
-        clearInterval(timer)
-        captchaVerified.value = true
-        captchaLoading.value = false
-      }
-    }, 500)
+    captchaIframeUrl.value = resp.url
+    captchaVisible.value = true
   } catch (e) {
-    captchaLoading.value = false
     errorMsg.value = e instanceof ApiError ? e.msg : '获取验证失败'
+  } finally {
+    captchaLoading.value = false
   }
 }
+
+// 监听 captcha.html 通过 postMessage 发来的结果
+function onCaptchaMessage(event: MessageEvent) {
+  if (!event.data || typeof event.data !== 'object') return
+  const { type } = event.data
+  if (type === 'captcha_success') {
+    captchaVerified.value = true
+    captchaVisible.value = false
+    captchaIframeUrl.value = ''
+  } else if (type === 'captcha_error') {
+    captchaVerified.value = false
+    captchaVisible.value = false
+    captchaIframeUrl.value = ''
+    captchaKey.value = ''
+    errorMsg.value = '人机验证失败，请重试'
+  }
+}
+
+// Dialog 打开/关闭时挂载/卸载消息监听
+watch(() => props.modelValue, (val) => {
+  if (val) {
+    window.addEventListener('message', onCaptchaMessage)
+  } else {
+    window.removeEventListener('message', onCaptchaMessage)
+    captchaIframeUrl.value = ''
+    captchaVisible.value = false
+  }
+})
+onUnmounted(() => {
+  window.removeEventListener('message', onCaptchaMessage)
+})
 
 // ── 邮箱验证码（注册/重置密码共用） ──
 const codeCooldown = ref(0)
@@ -327,19 +353,29 @@ async function handleReset() {
 
         <!-- 人机验证 -->
         <el-form-item label="人机验证">
-          <div class="captcha-row">
-            <div class="captcha-status" :class="{ verified: captchaVerified }">
-              <el-icon v-if="captchaVerified"><CircleCheck /></el-icon>
-              <el-icon v-else><Shield /></el-icon>
-              <span>{{ captchaVerified ? '验证已通过' : '请完成人机验证' }}</span>
+          <div class="captcha-wrap">
+            <div class="captcha-row">
+              <div class="captcha-status" :class="{ verified: captchaVerified }">
+                <el-icon v-if="captchaVerified"><CircleCheck /></el-icon>
+                <el-icon v-else><Shield /></el-icon>
+                <span>{{ captchaVerified ? '验证已通过' : '请完成人机验证' }}</span>
+              </div>
+              <el-button
+                size="small"
+                :loading="captchaLoading"
+                @click="openCaptcha"
+              >
+                {{ captchaVerified ? '重新验证' : '获取验证' }}
+              </el-button>
             </div>
-            <el-button
-              size="small"
-              :loading="captchaLoading"
-              @click="openCaptcha"
-            >
-              {{ captchaVerified ? '重新验证' : '获取验证' }}
-            </el-button>
+            <div v-if="captchaVisible" class="captcha-iframe-wrap">
+              <iframe
+                :src="captchaIframeUrl"
+                class="captcha-iframe"
+                frameborder="0"
+                scrolling="no"
+              />
+            </div>
           </div>
         </el-form-item>
 
@@ -406,19 +442,29 @@ async function handleReset() {
 
         <!-- 人机验证 -->
         <el-form-item label="人机验证">
-          <div class="captcha-row">
-            <div class="captcha-status" :class="{ verified: captchaVerified }">
-              <el-icon v-if="captchaVerified"><CircleCheck /></el-icon>
-              <el-icon v-else><Shield /></el-icon>
-              <span>{{ captchaVerified ? '验证已通过' : '请完成人机验证' }}</span>
+          <div class="captcha-wrap">
+            <div class="captcha-row">
+              <div class="captcha-status" :class="{ verified: captchaVerified }">
+                <el-icon v-if="captchaVerified"><CircleCheck /></el-icon>
+                <el-icon v-else><Shield /></el-icon>
+                <span>{{ captchaVerified ? '验证已通过' : '请完成人机验证' }}</span>
+              </div>
+              <el-button
+                size="small"
+                :loading="captchaLoading"
+                @click="openCaptcha"
+              >
+                {{ captchaVerified ? '重新验证' : '获取验证' }}
+              </el-button>
             </div>
-            <el-button
-              size="small"
-              :loading="captchaLoading"
-              @click="openCaptcha"
-            >
-              {{ captchaVerified ? '重新验证' : '获取验证' }}
-            </el-button>
+            <div v-if="captchaVisible" class="captcha-iframe-wrap">
+              <iframe
+                :src="captchaIframeUrl"
+                class="captcha-iframe"
+                frameborder="0"
+                scrolling="no"
+              />
+            </div>
           </div>
         </el-form-item>
 
@@ -484,19 +530,29 @@ async function handleReset() {
 
         <!-- 人机验证 -->
         <el-form-item label="人机验证">
-          <div class="captcha-row">
-            <div class="captcha-status" :class="{ verified: captchaVerified }">
-              <el-icon v-if="captchaVerified"><CircleCheck /></el-icon>
-              <el-icon v-else><Shield /></el-icon>
-              <span>{{ captchaVerified ? '验证已通过' : '请完成人机验证' }}</span>
+          <div class="captcha-wrap">
+            <div class="captcha-row">
+              <div class="captcha-status" :class="{ verified: captchaVerified }">
+                <el-icon v-if="captchaVerified"><CircleCheck /></el-icon>
+                <el-icon v-else><Shield /></el-icon>
+                <span>{{ captchaVerified ? '验证已通过' : '请完成人机验证' }}</span>
+              </div>
+              <el-button
+                size="small"
+                :loading="captchaLoading"
+                @click="openCaptcha"
+              >
+                {{ captchaVerified ? '重新验证' : '获取验证' }}
+              </el-button>
             </div>
-            <el-button
-              size="small"
-              :loading="captchaLoading"
-              @click="openCaptcha"
-            >
-              {{ captchaVerified ? '重新验证' : '获取验证' }}
-            </el-button>
+            <div v-if="captchaVisible" class="captcha-iframe-wrap">
+              <iframe
+                :src="captchaIframeUrl"
+                class="captcha-iframe"
+                frameborder="0"
+                scrolling="no"
+              />
+            </div>
           </div>
         </el-form-item>
 
@@ -614,13 +670,35 @@ async function handleReset() {
   flex: 1;
 }
 
-/* 人机验证行 */
+/* 人机验证区域 */
+.captcha-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .captcha-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
   gap: 8px;
+}
+
+.captcha-iframe-wrap {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--hw-border);
+  background: var(--hw-bg-secondary);
+}
+
+.captcha-iframe {
+  width: 100%;
+  height: 120px;
+  border: none;
+  display: block;
 }
 
 .captcha-status {

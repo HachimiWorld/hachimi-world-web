@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useRouter, useRoute } from 'vue-router'
+import logoUrl from '@/assets/logo.png'
 
 const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{
@@ -40,7 +41,16 @@ function isActive(path: string) {
     class="mobile-sidebar-drawer"
   >
     <div class="sidebar-content">
-      <div class="sidebar-logo">基米天堂</div>
+      <div class="sidebar-logo">
+        <span
+          class="sidebar-logo-img"
+          :style="{
+            webkitMaskImage: `url(${logoUrl})`,
+            maskImage: `url(${logoUrl})`,
+          }"
+        ></span>
+        <span>基米天堂</span>
+      </div>
       <nav class="sidebar-nav">
         <button
           v-for="item in navItems"
@@ -76,6 +86,23 @@ function isActive(path: string) {
   font-family: 'Trebuchet MS', 'Segoe UI Rounded', 'Arial Rounded MT Bold', 'Microsoft YaHei', sans-serif;
   user-select: none;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sidebar-logo-img {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  background-color: var(--theme-color);
 }
 
 .sidebar-nav {
