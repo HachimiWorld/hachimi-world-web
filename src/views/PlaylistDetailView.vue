@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { CaretRight, Edit, Delete, Star, StarFilled, User, Tickets, Warning, Upload } from '@element-plus/icons-vue'
+import { CaretRight, Edit, Delete, Star, StarFilled, User, Headset, Warning, Upload } from '@element-plus/icons-vue'
 import { ApiError } from '@/api/request'
 import {
   getPlaylistDetail, updatePlaylist, deletePlaylist, removeSongFromPlaylist,
@@ -199,19 +199,51 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
     <!-- 加载骨架 -->
     <section v-if="loading" class="pd-loading">
       <div class="pd-loading-hero">
-        <div class="pd-cover-skeleton"></div>
-        <div class="pd-meta-skeleton">
-          <el-skeleton animated>
-            <template #template>
-              <el-skeleton-item variant="h1" style="width:55%" />
-              <el-skeleton-item variant="text" style="width:38%;margin-top:12px" />
-              <el-skeleton-item variant="text" style="width:70%;margin-top:20px" />
-              <el-skeleton-item variant="button" style="width:100px;margin-top:20px" />
-            </template>
-          </el-skeleton>
+        <div class="pd-cover-wrap">
+          <div class="pd-cover-box pd-cover-box-skeleton">
+            <div class="pd-cover-skeleton"></div>
+          </div>
+          <div class="pd-cover-upload-skeleton"></div>
+        </div>
+
+        <div class="pd-hero-info pd-hero-info-skeleton">
+          <div class="pd-badge-skeleton"></div>
+          <div class="pd-title-skeleton"></div>
+          <div class="pd-creator-skeleton-row">
+            <div class="pd-creator-avatar-skeleton"></div>
+            <div class="pd-creator-name-skeleton"></div>
+          </div>
+          <div class="pd-meta-skeleton-row">
+            <div class="pd-meta-skeleton"></div>
+            <div class="pd-meta-skeleton dot"></div>
+            <div class="pd-meta-skeleton wide"></div>
+          </div>
+          <div class="pd-desc-skeleton">
+            <div class="pd-line-skeleton long"></div>
+            <div class="pd-line-skeleton short"></div>
+          </div>
+          <div class="pd-actions-skeleton">
+            <div class="pd-btn-skeleton primary"></div>
+            <div class="pd-btn-skeleton"></div>
+            <div class="pd-btn-skeleton"></div>
+          </div>
         </div>
       </div>
-      <el-skeleton animated :rows="6" style="margin-top:32px" />
+
+      <section class="pd-songs-section pd-songs-section-skeleton">
+        <div class="pd-songs-list">
+          <div v-for="i in 6" :key="i" class="pd-song-row pd-song-row-skeleton">
+            <div class="pd-song-index-skeleton"></div>
+            <div class="pd-song-cover pd-song-cover-skeleton"></div>
+            <div class="pd-song-info">
+              <div class="pd-song-title-skeleton"></div>
+              <div class="pd-song-meta-skeleton"></div>
+            </div>
+            <div class="pd-song-duration-skeleton"></div>
+            <div class="pd-song-remove-skeleton"></div>
+          </div>
+        </div>
+      </section>
     </section>
 
     <!-- 错误 -->
@@ -227,7 +259,7 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
         <div class="pd-cover-wrap">
           <div class="pd-cover-box">
             <img v-if="coverUrl" :src="coverUrl" :alt="detail.playlist_info.name" class="pd-cover-img" />
-            <div v-else class="pd-cover-fallback"><el-icon><Tickets /></el-icon></div>
+            <div v-else class="pd-cover-fallback"><el-icon><Headset /></el-icon></div>
           </div>
           <button v-if="isOwner" class="pd-cover-upload-btn" :class="{ uploading: coverUploading }" @click="triggerCoverUpload">
             <el-icon><Upload /></el-icon>
@@ -312,7 +344,14 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
 
     <LoginDialog v-model="loginDialogOpen" />
 
-    <el-dialog v-model="editDialogOpen" title="编辑歌单信息" width="480px">
+    <el-dialog
+      v-model="editDialogOpen"
+      title="编辑歌单信息"
+      width="480px"
+      class="pd-edit-dialog"
+      modal-class="pd-edit-dialog-overlay"
+      align-center
+    >
       <div class="pd-edit-form">
         <div class="pd-edit-field">
           <label>歌单名称 <span class="pd-required">*</span></label>
@@ -344,27 +383,205 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
 }
 
 /* ─── 骨架 ─── */
-.pd-loading-hero {
+.pd-loading {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
   gap: 32px;
 }
 
+.pd-loading-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 36px;
+}
+
+.pd-cover-box-skeleton {
+  padding: 0;
+}
+
+.pd-cover-skeleton,
+.pd-cover-upload-skeleton,
+.pd-badge-skeleton,
+.pd-title-skeleton,
+.pd-creator-avatar-skeleton,
+.pd-creator-name-skeleton,
+.pd-meta-skeleton,
+.pd-line-skeleton,
+.pd-btn-skeleton,
+.pd-song-index-skeleton,
+.pd-song-cover-skeleton,
+.pd-song-title-skeleton,
+.pd-song-meta-skeleton,
+.pd-song-duration-skeleton,
+.pd-song-remove-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--hw-bg-secondary) 25%,
+    var(--hw-bg-hover) 50%,
+    var(--hw-bg-secondary) 75%
+  );
+  background-size: 400% 100%;
+  animation: el-skeleton-loading 1.4s ease infinite;
+}
+
 .pd-cover-skeleton {
-  flex-shrink: 0;
-  width: 200px;
-  height: 200px;
+  width: 100%;
+  height: 100%;
   border-radius: 16px;
-  background: var(--hw-bg-secondary);
-  animation: pd-pulse 1.4s ease-in-out infinite;
 }
 
-@keyframes pd-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+.pd-cover-upload-skeleton {
+  width: 100%;
+  height: 32px;
+  border-radius: 999px;
 }
 
-.pd-meta-skeleton { flex: 1; padding-top: 8px; }
+.pd-hero-info-skeleton {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.pd-badge-skeleton {
+  width: 74px;
+  height: 22px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+
+.pd-title-skeleton {
+  width: min(420px, 78%);
+  height: 34px;
+  border-radius: 12px;
+  margin-bottom: 14px;
+}
+
+.pd-creator-skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.pd-creator-avatar-skeleton {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+}
+
+.pd-creator-name-skeleton {
+  width: 88px;
+  height: 14px;
+  border-radius: 999px;
+}
+
+.pd-meta-skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.pd-meta-skeleton {
+  width: 66px;
+  height: 14px;
+  border-radius: 999px;
+}
+
+.pd-meta-skeleton.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.pd-meta-skeleton.wide {
+  width: 110px;
+}
+
+.pd-desc-skeleton {
+  width: min(560px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.pd-line-skeleton {
+  height: 13px;
+  border-radius: 999px;
+}
+
+.pd-line-skeleton.long {
+  width: 100%;
+}
+
+.pd-line-skeleton.short {
+  width: 68%;
+}
+
+.pd-actions-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pd-btn-skeleton {
+  height: 38px;
+  width: 102px;
+  border-radius: 12px;
+}
+
+.pd-btn-skeleton.primary {
+  width: 116px;
+}
+
+.pd-songs-section-skeleton {
+  padding-top: 24px;
+}
+
+.pd-song-row-skeleton {
+  cursor: default;
+}
+
+.pd-song-index-skeleton {
+  width: 18px;
+  height: 12px;
+  justify-self: end;
+  border-radius: 999px;
+}
+
+.pd-song-cover-skeleton {
+  border-radius: 8px;
+}
+
+.pd-song-title-skeleton {
+  width: 44%;
+  height: 14px;
+  border-radius: 999px;
+}
+
+.pd-song-meta-skeleton {
+  width: 28%;
+  height: 12px;
+  border-radius: 999px;
+  margin-top: 6px;
+}
+
+.pd-song-duration-skeleton {
+  width: 36px;
+  height: 12px;
+  justify-self: end;
+  border-radius: 999px;
+}
+
+.pd-song-remove-skeleton {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
 
 /* ─── 错误/空状态 ─── */
 .pd-state-card {
@@ -744,6 +961,24 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
+}
+
+.pd-edit-toggle label {
+  margin: 0;
+}
+
+:deep(.pd-edit-dialog .el-dialog__body) {
+  padding-top: 18px;
+  padding-bottom: 12px;
+}
+
+:deep(.pd-edit-dialog .el-dialog__footer) {
+  padding-top: 8px;
+}
+
+:deep(.pd-edit-dialog .el-dialog__footer .pd-btn + .pd-btn) {
+  margin-left: 10px;
 }
 
 /* ─── 响应式 ─── */
@@ -764,6 +999,15 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
   .pd-song-row {
     grid-template-columns: 24px 40px 1fr 52px auto;
     gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pv-create-dialog-overlay,
+  .pd-edit-dialog-overlay,
+  .login-dialog-overlay,
+  .playlist-manage-dialog-overlay {
+    padding: 12px;
   }
 }
 </style>

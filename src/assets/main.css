@@ -126,6 +126,74 @@ button {
   font-weight: 400;
 }
 
+/* ===== Dialog 通用四向居中 ===== */
+.pv-create-dialog-overlay,
+.pd-edit-dialog-overlay,
+.login-dialog-overlay,
+.playlist-manage-dialog-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.pv-create-dialog-overlay .el-overlay-dialog,
+.pd-edit-dialog-overlay .el-overlay-dialog,
+.login-dialog-overlay .el-overlay-dialog,
+.playlist-manage-dialog-overlay .el-overlay-dialog {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pv-create-dialog-overlay .el-dialog,
+.pd-edit-dialog-overlay .el-dialog,
+.login-dialog-overlay .el-dialog,
+.playlist-manage-dialog-overlay .el-dialog {
+  margin: 0 !important;
+  max-width: calc(100vw - 24px);
+}
+
+/* ===== Element Plus 主题色覆盖：Dialog/Button/Switch ===== */
+.el-dialog,
+.el-message-box {
+  --el-color-primary: var(--theme-color);
+  --el-color-primary-light-3: color-mix(in srgb, var(--theme-color) 70%, white);
+  --el-color-primary-light-5: color-mix(in srgb, var(--theme-color) 50%, white);
+  --el-color-primary-light-7: color-mix(in srgb, var(--theme-color) 30%, white);
+  --el-color-primary-light-8: color-mix(in srgb, var(--theme-color) 22%, white);
+  --el-color-primary-light-9: color-mix(in srgb, var(--theme-color) 14%, white);
+  --el-color-primary-dark-2: color-mix(in srgb, var(--theme-color) 82%, black);
+}
+
+.el-button--primary {
+  --el-button-bg-color: var(--theme-color);
+  --el-button-border-color: var(--theme-color);
+  --el-button-hover-bg-color: color-mix(in srgb, var(--theme-color) 92%, white);
+  --el-button-hover-border-color: color-mix(in srgb, var(--theme-color) 92%, white);
+  --el-button-active-bg-color: color-mix(in srgb, var(--theme-color) 82%, black);
+  --el-button-active-border-color: color-mix(in srgb, var(--theme-color) 82%, black);
+}
+
+.el-overlay .el-button:hover,
+.el-overlay .el-button:focus-visible {
+  color: var(--theme-color);
+  border-color: color-mix(in srgb, var(--theme-color) 45%, var(--hw-border));
+  background: var(--theme-color-light);
+}
+
+.el-overlay .el-button--primary:hover,
+.el-overlay .el-button--primary:focus-visible {
+  color: #fff;
+  border-color: color-mix(in srgb, var(--theme-color) 82%, black);
+  background: color-mix(in srgb, var(--theme-color) 82%, black);
+}
+
+.el-overlay .el-switch {
+  --el-switch-on-color: var(--theme-color) !important;
+  --el-switch-off-color: var(--hw-border) !important;
+}
+
 /* ===== Element Plus 深色主题覆盖 ===== */
 :root.dark .el-dialog {
   background: #1e1e1e;

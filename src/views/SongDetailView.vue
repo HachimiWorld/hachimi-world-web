@@ -265,27 +265,80 @@ onMounted(() => {
     <div class="song-detail-shell">
       <section v-if="loading" class="detail-loading-card">
         <div class="loading-hero">
-          <div class="cover-stage">
-            <div class="vinyl-shell">
-              <div class="vinyl-disc">
-                <div class="vinyl-ring ring-1"></div>
-                <div class="vinyl-ring ring-2"></div>
-                <div class="vinyl-ring ring-3"></div>
-                <div class="vinyl-core loading-core"></div>
-                <span class="disc-hole"></span>
+          <div class="left-column loading-left-column">
+            <div class="cover-stage">
+              <div class="vinyl-shell">
+                <div class="vinyl-disc">
+                  <div class="vinyl-ring ring-1"></div>
+                  <div class="vinyl-ring ring-2"></div>
+                  <div class="vinyl-ring ring-3"></div>
+                  <div class="vinyl-core loading-core"></div>
+                  <span class="disc-hole"></span>
+                </div>
               </div>
             </div>
+
+            <aside class="lyrics-panel loading-lyrics-panel">
+              <div class="lyrics-skeleton-scroll">
+                <div v-for="i in 9" :key="`lyric-skeleton-${i}`" class="lyric-skeleton-line" :class="i % 3 === 0 ? 'short' : i % 2 === 0 ? 'mid' : 'long'"></div>
+              </div>
+            </aside>
           </div>
+
           <div class="loading-copy">
-            <el-skeleton animated>
-              <template #template>
-                <el-skeleton-item variant="h1" style="width: 48%" />
-                <el-skeleton-item variant="text" style="width: 68%; margin-top: 10px" />
-                <el-skeleton-item variant="text" style="width: 100%; margin-top: 22px" />
-                <el-skeleton-item variant="text" style="width: 92%; margin-top: 12px" />
-                <el-skeleton-item variant="text" style="width: 88%; margin-top: 12px" />
-              </template>
-            </el-skeleton>
+            <div class="loading-title-line">
+              <div class="loading-title-skeleton"></div>
+              <div class="loading-id-skeleton"></div>
+            </div>
+            <div class="loading-subtitle-skeleton"></div>
+
+            <div class="loading-meta-inline">
+              <div class="loading-pill-skeleton author"></div>
+              <div class="loading-pill-skeleton"></div>
+              <div class="loading-pill-skeleton"></div>
+              <div class="loading-pill-skeleton like"></div>
+            </div>
+
+            <div class="loading-action-row">
+              <div class="loading-action-skeleton primary"></div>
+              <div class="loading-action-skeleton"></div>
+              <div class="loading-action-skeleton"></div>
+              <div class="loading-action-skeleton"></div>
+            </div>
+
+            <div class="info-board loading-info-board">
+              <div class="info-grid">
+                <div v-for="i in 7" :key="`info-skeleton-${i}`" class="info-item">
+                  <div class="loading-info-label"></div>
+                  <div class="loading-info-value" :class="i % 2 === 0 ? 'wide' : 'narrow'"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="desc-panel loading-desc-panel">
+              <div class="section-caption loading-caption-row">
+                <div class="loading-caption-icon"></div>
+                <div class="loading-caption-text"></div>
+              </div>
+              <div class="loading-text-block">
+                <div class="loading-text-line long"></div>
+                <div class="loading-text-line mid"></div>
+                <div class="loading-text-line short"></div>
+              </div>
+            </div>
+
+            <div class="tags-panel loading-tags-panel">
+              <div class="section-caption loading-caption-row">
+                <div class="loading-caption-icon"></div>
+                <div class="loading-caption-text short"></div>
+              </div>
+              <div class="tag-list">
+                <div class="loading-tag-chip wide"></div>
+                <div class="loading-tag-chip"></div>
+                <div class="loading-tag-chip narrow"></div>
+                <div class="loading-tag-chip"></div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -471,14 +524,218 @@ onMounted(() => {
 
 /* 加载骨架唱片 */
 .loading-hero {
-  display: flex;
-  align-items: flex-start;
-  gap: 48px;
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.loading-left-column {
+  position: static;
 }
 
 .loading-copy {
+  min-width: 0;
+}
+
+.loading-title-line,
+.loading-meta-inline,
+.loading-action-row,
+.loading-caption-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.loading-title-line {
+  align-items: center;
+}
+
+.loading-title-skeleton,
+.loading-id-skeleton,
+.loading-subtitle-skeleton,
+.loading-pill-skeleton,
+.loading-action-skeleton,
+.loading-info-label,
+.loading-info-value,
+.loading-caption-icon,
+.loading-caption-text,
+.loading-text-line,
+.loading-tag-chip,
+.lyric-skeleton-line {
+  background: linear-gradient(
+    90deg,
+    var(--hw-bg-secondary) 25%,
+    var(--hw-bg-hover) 50%,
+    var(--hw-bg-secondary) 75%
+  );
+  background-size: 400% 100%;
+  animation: el-skeleton-loading 1.4s ease infinite;
+}
+
+.loading-title-skeleton {
+  width: min(360px, 58%);
+  height: 38px;
+  border-radius: 14px;
+}
+
+.loading-id-skeleton {
+  width: 72px;
+  height: 30px;
+  border-radius: 999px;
+}
+
+.loading-subtitle-skeleton {
+  width: 52%;
+  height: 16px;
+  border-radius: 999px;
+  margin-top: 10px;
+}
+
+.loading-meta-inline {
+  margin-top: 18px;
+}
+
+.loading-pill-skeleton {
+  height: 36px;
+  width: 112px;
+  border-radius: 999px;
+}
+
+.loading-pill-skeleton.author {
+  width: 126px;
+}
+
+.loading-pill-skeleton.like {
+  width: 84px;
+}
+
+.loading-action-row {
+  margin-top: 18px;
+}
+
+.loading-action-skeleton {
+  height: 42px;
+  width: 110px;
+  border-radius: 999px;
+}
+
+.loading-action-skeleton.primary {
+  width: 126px;
+}
+
+.loading-info-board,
+.loading-desc-panel,
+.loading-tags-panel {
+  margin-top: 20px;
+}
+
+.loading-info-label {
+  width: 42px;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.loading-info-value {
+  width: 86%;
+  height: 15px;
+  border-radius: 999px;
+}
+
+.loading-info-value.wide {
+  width: 92%;
+}
+
+.loading-info-value.narrow {
+  width: 64%;
+}
+
+.loading-caption-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+}
+
+.loading-caption-text {
+  width: 76px;
+  height: 16px;
+  border-radius: 999px;
+}
+
+.loading-caption-text.short {
+  width: 42px;
+}
+
+.loading-text-block {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.loading-text-line {
+  height: 14px;
+  border-radius: 999px;
+}
+
+.loading-text-line.long {
+  width: 100%;
+}
+
+.loading-text-line.mid {
+  width: 88%;
+}
+
+.loading-text-line.short {
+  width: 62%;
+}
+
+.loading-tag-chip {
+  width: 82px;
+  height: 32px;
+  border-radius: 999px;
+}
+
+.loading-tag-chip.wide {
+  width: 96px;
+}
+
+.loading-tag-chip.narrow {
+  width: 66px;
+}
+
+.loading-lyrics-panel {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.lyrics-skeleton-scroll {
   flex: 1;
-  padding-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding-right: 4px;
+}
+
+.lyric-skeleton-line {
+  height: 12px;
+  border-radius: 999px;
+}
+
+.lyric-skeleton-line.long {
+  width: 72%;
+}
+
+.lyric-skeleton-line.mid {
+  width: 58%;
+}
+
+.lyric-skeleton-line.short {
+  width: 42%;
 }
 
 /* 骨架唱片用主题色填充封面区域 */
@@ -864,12 +1121,14 @@ onMounted(() => {
     grid-template-columns: 1fr;
   }
 
-  .left-column {
+  .left-column,
+  .loading-left-column {
     order: 1;
     position: static;
   }
 
-  .hero-main {
+  .hero-main,
+  .loading-copy {
     order: 2;
   }
 
@@ -882,7 +1141,8 @@ onMounted(() => {
   }
 
   /* 手机端：歌词容器高度与唱片一致，文字居中 */
-  .lyrics-panel {
+  .lyrics-panel,
+  .loading-lyrics-panel {
     height: min(280px, 78vw);
   }
 
@@ -922,7 +1182,8 @@ onMounted(() => {
     width: min(280px, 78vw);
   }
 
-  .lyrics-panel {
+  .lyrics-panel,
+  .loading-lyrics-panel {
     min-height: 280px;
   }
 }

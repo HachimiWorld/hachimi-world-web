@@ -203,20 +203,59 @@ onMounted(() => {
 
       <section class="search-body">
         <div v-if="loading" class="result-grid">
-          <div v-for="i in PAGE_SIZE" :key="i" class="result-skeleton">
-            <el-skeleton animated>
-              <template #template>
-                <div class="skeleton-inner">
-                  <el-skeleton-item variant="image" class="skeleton-cover" />
-                  <div class="skeleton-copy">
-                    <el-skeleton-item variant="h3" style="width: 55%" />
-                    <el-skeleton-item variant="text" style="width: 72%; margin-top: 8px" />
-                    <el-skeleton-item variant="text" style="width: 88%; margin-top: 12px" />
-                  </div>
+          <template v-if="currentTab === 'music'">
+            <div v-for="i in PAGE_SIZE" :key="`music-skeleton-${i}`" class="result-skeleton song-skeleton">
+              <div class="song-skeleton-cover"></div>
+              <div class="song-skeleton-main">
+                <div class="song-skeleton-title"></div>
+                <div class="song-skeleton-subtitle"></div>
+                <div class="song-skeleton-desc">
+                  <div class="song-skeleton-line long"></div>
+                  <div class="song-skeleton-line short"></div>
                 </div>
-              </template>
-            </el-skeleton>
-          </div>
+                <div class="song-skeleton-meta">
+                  <div class="song-skeleton-chip creator"></div>
+                  <div class="song-skeleton-chip duration"></div>
+                  <div class="song-skeleton-chip count"></div>
+                  <div class="song-skeleton-chip like"></div>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <template v-else-if="currentTab === 'user'">
+            <div v-for="i in PAGE_SIZE" :key="`user-skeleton-${i}`" class="result-skeleton user-skeleton">
+              <div class="user-skeleton-avatar"></div>
+              <div class="user-skeleton-main">
+                <div class="user-skeleton-topline">
+                  <div class="user-skeleton-name"></div>
+                  <div class="user-skeleton-gender"></div>
+                </div>
+                <div class="user-skeleton-uid"></div>
+                <div class="user-skeleton-bio">
+                  <div class="user-skeleton-line long"></div>
+                  <div class="user-skeleton-line short"></div>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <template v-else>
+            <div v-for="i in PAGE_SIZE" :key="`playlist-skeleton-${i}`" class="result-skeleton playlist-skeleton">
+              <div class="playlist-skeleton-cover"></div>
+              <div class="playlist-skeleton-main">
+                <div class="playlist-skeleton-topline">
+                  <div class="playlist-skeleton-title"></div>
+                  <div class="playlist-skeleton-count"></div>
+                </div>
+                <div class="playlist-skeleton-creator"></div>
+                <div class="playlist-skeleton-desc">
+                  <div class="playlist-skeleton-line long"></div>
+                  <div class="playlist-skeleton-line short"></div>
+                </div>
+              </div>
+            </div>
+          </template>
         </div>
 
         <div v-else-if="errorText" class="state-card error-state">
@@ -404,34 +443,191 @@ onMounted(() => {
   gap: 14px;
 }
 
-.result-skeleton {
+.result-skeleton,
+.song-skeleton,
+.user-skeleton,
+.playlist-skeleton {
   border-radius: 16px;
-  overflow: hidden;
   border: 1px solid var(--hw-border);
   background: var(--hw-bg-secondary);
 }
 
-.skeleton-inner {
+.song-skeleton,
+.playlist-skeleton {
   display: flex;
   gap: 14px;
+  min-width: 0;
   padding: 12px;
 }
 
-.skeleton-cover {
-  width: 88px;
-  flex-shrink: 0;
-}
-
-.skeleton-copy {
-  flex: 1;
+.user-skeleton {
+  display: flex;
+  gap: 14px;
   min-width: 0;
-  padding-top: 4px;
+  align-items: center;
+  padding: 14px;
 }
 
-:deep(.skeleton-cover .el-skeleton__image) {
+.song-skeleton-cover,
+.song-skeleton-title,
+.song-skeleton-subtitle,
+.song-skeleton-line,
+.song-skeleton-chip,
+.user-skeleton-avatar,
+.user-skeleton-name,
+.user-skeleton-gender,
+.user-skeleton-uid,
+.user-skeleton-line,
+.playlist-skeleton-cover,
+.playlist-skeleton-title,
+.playlist-skeleton-count,
+.playlist-skeleton-creator,
+.playlist-skeleton-line {
+  background: linear-gradient(
+    90deg,
+    var(--hw-bg-primary) 25%,
+    var(--hw-bg-hover) 50%,
+    var(--hw-bg-primary) 75%
+  );
+  background-size: 400% 100%;
+  animation: el-skeleton-loading 1.4s ease infinite;
+}
+
+.song-skeleton-cover,
+.playlist-skeleton-cover {
   width: 88px;
   height: 88px;
   border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.song-skeleton-main,
+.playlist-skeleton-main,
+.user-skeleton-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.song-skeleton-main,
+.playlist-skeleton-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.song-skeleton-title,
+.playlist-skeleton-title,
+.user-skeleton-name {
+  height: 18px;
+  border-radius: 999px;
+}
+
+.song-skeleton-title {
+  width: 62%;
+}
+
+.song-skeleton-subtitle {
+  width: 76%;
+  height: 13px;
+  border-radius: 999px;
+  margin-top: 8px;
+}
+
+.song-skeleton-desc,
+.user-skeleton-bio,
+.playlist-skeleton-desc {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.song-skeleton-line,
+.user-skeleton-line,
+.playlist-skeleton-line {
+  height: 12px;
+  border-radius: 999px;
+}
+
+.song-skeleton-line.long,
+.user-skeleton-line.long,
+.playlist-skeleton-line.long {
+  width: 92%;
+}
+
+.song-skeleton-line.short,
+.user-skeleton-line.short,
+.playlist-skeleton-line.short {
+  width: 66%;
+}
+
+.song-skeleton-meta {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.song-skeleton-chip {
+  height: 12px;
+  border-radius: 999px;
+}
+
+.song-skeleton-chip.creator { width: 72px; }
+.song-skeleton-chip.duration { width: 52px; }
+.song-skeleton-chip.count { width: 58px; }
+.song-skeleton-chip.like { width: 50px; }
+
+.user-skeleton-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.user-skeleton-topline,
+.playlist-skeleton-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.user-skeleton-name {
+  width: 34%;
+}
+
+.user-skeleton-gender {
+  width: 56px;
+  height: 12px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.user-skeleton-uid,
+.playlist-skeleton-creator {
+  height: 12px;
+  border-radius: 999px;
+  margin-top: 8px;
+}
+
+.user-skeleton-uid {
+  width: 74px;
+}
+
+.playlist-skeleton-title {
+  width: 56%;
+}
+
+.playlist-skeleton-count {
+  width: 40px;
+  height: 12px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.playlist-skeleton-creator {
+  width: 84px;
 }
 
 .state-card {

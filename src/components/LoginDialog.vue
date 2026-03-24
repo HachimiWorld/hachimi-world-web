@@ -300,6 +300,8 @@ async function handleReset() {
     :title="activeTab === 'login' ? '登录' : activeTab === 'register' ? '注册' : '重置密码'"
     width="420px"
     class="login-dialog"
+    modal-class="login-dialog-overlay"
+    align-center
     :close-on-click-modal="true"
     destroy-on-close
   >
@@ -733,6 +735,20 @@ async function handleReset() {
 
 .submit-btn:hover {
   opacity: 0.88;
+}
+
+:deep(.el-button:hover),
+:deep(.el-button:focus-visible) {
+  color: var(--theme-color);
+  border-color: color-mix(in srgb, var(--theme-color) 45%, var(--hw-border));
+  background: var(--theme-color-light);
+}
+
+:deep(.el-button--primary:hover),
+:deep(.el-button--primary:focus-visible) {
+  color: #fff;
+  border-color: color-mix(in srgb, var(--theme-color) 82%, black);
+  background: color-mix(in srgb, var(--theme-color) 82%, black);
 }
 
 .submit-btn:active {

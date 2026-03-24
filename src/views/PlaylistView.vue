@@ -309,7 +309,14 @@ onMounted(() => {
     <LoginDialog v-model="loginDialogOpen" />
 
     <!-- 新建歌单弹窗 -->
-    <el-dialog v-model="createDialogOpen" title="新建歌单" width="440px">
+    <el-dialog
+      v-model="createDialogOpen"
+      title="新建歌单"
+      width="440px"
+      align-center
+      modal-class="pv-create-dialog-overlay"
+      class="pv-create-dialog"
+    >
       <div class="pv-create-form">
         <div class="pv-form-field">
           <label>歌单名称 <span class="pv-required">*</span></label>
@@ -732,6 +739,20 @@ onMounted(() => {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
+}
+
+.pv-form-toggle label {
+  margin: 0;
+}
+
+:deep(.pv-create-dialog .el-dialog__body) {
+  padding-top: 18px;
+  padding-bottom: 12px;
+}
+
+:deep(.pv-create-dialog .el-dialog__footer) {
+  padding-top: 8px;
 }
 
 .pv-dialog-btn {

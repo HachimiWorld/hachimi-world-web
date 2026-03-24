@@ -120,6 +120,7 @@ watch(
       title="加入歌单"
       width="min(720px, calc(100vw - 24px))"
       class="playlist-manage-dialog"
+      modal-class="playlist-manage-dialog-overlay"
       align-center
     >
       <div class="playlist-manage-shell">

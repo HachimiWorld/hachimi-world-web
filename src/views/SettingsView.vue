@@ -533,7 +533,23 @@ onMounted(async () => {
   --el-button-border-color: var(--theme-color) !important;
   --el-button-hover-bg-color: var(--theme-color) !important;
   --el-button-hover-border-color: var(--theme-color) !important;
+  --el-button-active-bg-color: color-mix(in srgb, var(--theme-color) 82%, black) !important;
+  --el-button-active-border-color: color-mix(in srgb, var(--theme-color) 82%, black) !important;
+  --el-button-outline-color: color-mix(in srgb, var(--theme-color) 24%, transparent) !important;
   flex-shrink: 0;
+}
+
+.login-btn:deep(.el-button),
+.login-btn:active,
+.login-btn:focus-visible {
+  background: var(--theme-color) !important;
+  border-color: var(--theme-color) !important;
+  color: #fff !important;
+}
+
+.login-btn:active {
+  background: color-mix(in srgb, var(--theme-color) 82%, black) !important;
+  border-color: color-mix(in srgb, var(--theme-color) 82%, black) !important;
 }
 
 /* switch 图标颜色：覆盖 label 里的 icon */

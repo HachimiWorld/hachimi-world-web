@@ -962,7 +962,7 @@ onMounted(async () => {
 .btn-remove:hover { border-color: #e85c5c; color: #e85c5c; }
 .btn-primary {
   padding: 10px 28px;
-  background: var(--hw-accent);
+  background: var(--theme-color);
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -972,6 +972,13 @@ onMounted(async () => {
   transition: opacity 0.2s;
 }
 .btn-primary:hover { opacity: 0.85; }
+.btn-primary:active {
+  background: color-mix(in srgb, var(--theme-color) 82%, black);
+}
+:root:not(.dark) .btn-primary {
+  background: var(--theme-color);
+  color: #fff;
+}
 .btn-outline {
   padding: 8px 16px;
   border: 1px solid var(--hw-accent);
