@@ -107,6 +107,8 @@ const lrcLines = computed<LrcLine[]>(() => {
   return text.split(/\r?\n/).map((line) => ({ time: 0, text: line.trim() })).filter(l => l.text)
 })
 
+const hasOriginalLyrics = computed(() => Boolean(song.value?.lyrics?.trim()))
+
 // 是否正在播放这首歌
 const isCurrentSongPlaying = computed(() => {
   if (!song.value || !playerStore.currentSong) return false
@@ -134,6 +136,15 @@ const activeLrcIndex = computed(() => {
 // 自动滚动歌词
 const lyricsEl = ref<HTMLElement | null>(null)
 const lyricsCollapsed = ref(false)
+const mobileLyricsMedia = window.matchMedia('(max-width: 1080px)')
+
+function syncLyricsCollapsedState() {
+  if (!mobileLyricsMedia.matches) {
+    lyricsCollapsed.value = false
+    return
+  }
+  lyricsCollapsed.value = !hasOriginalLyrics.value
+}
 
 watch(activeLrcIndex, (idx) => {
   if (idx < 0 || !lyricsEl.value) return
@@ -255,8 +266,18 @@ watch(songId, () => {
   loadSong()
 })
 
+watch(hasOriginalLyrics, () => {
+  syncLyricsCollapsedState()
+})
+
 onMounted(() => {
+  syncLyricsCollapsedState()
+  mobileLyricsMedia.addEventListener('change', syncLyricsCollapsedState)
   loadSong()
+})
+
+onUnmounted(() => {
+  mobileLyricsMedia.removeEventListener('change', syncLyricsCollapsedState)
 })
 </script>
 
@@ -269,6 +290,10 @@ onMounted(() => {
             <div class="cover-stage">
               <div class="vinyl-shell">
                 <div class="vinyl-disc">
+                  <div class="vinyl-outer-rim"></div>
+                  <div class="vinyl-brand-ring brand-top"></div>
+                  <div class="vinyl-brand-ring brand-bottom"></div>
+                  <div class="vinyl-groove-layer"></div>
                   <div class="vinyl-ring ring-1"></div>
                   <div class="vinyl-ring ring-2"></div>
                   <div class="vinyl-ring ring-3"></div>
@@ -354,6 +379,14 @@ onMounted(() => {
             <div class="cover-stage">
               <div class="vinyl-shell">
                 <div class="vinyl-disc" :class="{ spinning: isCurrentSongPlaying }">
+                  <div class="vinyl-outer-rim"></div>
+                  <div class="vinyl-brand-ring brand-top">
+                    <span v-for="n in 13" :key="`brand-top-${n}`" class="brand-char">{{ 'Hachimi World'[n - 1] }}</span>
+                  </div>
+                  <div class="vinyl-brand-ring brand-bottom">
+                    <span v-for="n in 13" :key="`brand-bottom-${n}`" class="brand-char">{{ 'Hachimi World'[n - 1] }}</span>
+                  </div>
+                  <div class="vinyl-groove-layer"></div>
                   <div class="vinyl-ring ring-1"></div>
                   <div class="vinyl-ring ring-2"></div>
                   <div class="vinyl-ring ring-3"></div>
@@ -366,7 +399,7 @@ onMounted(() => {
               </div>
             </div>
 
-            <aside class="lyrics-panel" :class="{ collapsed: lyricsCollapsed }">
+            <aside class="lyrics-panel" :class="{ collapsed: lyricsCollapsed, 'no-original-lyrics': !hasOriginalLyrics }">
               <button class="lyrics-collapse-btn" @click="lyricsCollapsed = !lyricsCollapsed">
                 {{ lyricsCollapsed ? '展开歌词' : '收起歌词' }}
               </button>
@@ -754,7 +787,7 @@ onMounted(() => {
   aspect-ratio: 1;
   border-radius: 50%;
   background:
-    radial-gradient(circle at center, #151515 0 13%, #090909 13% 20%, #0f0f0f 20% 46%, #050505 46% 56%, #0b0b0b 56% 100%);
+    radial-gradient(circle at center, #191919 0 13%, #0f0f0f 13% 32%, #080808 32% 72%, #020202 72% 100%);
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.06),
     inset 0 0 24px rgba(255, 255, 255, 0.04);
@@ -762,14 +795,98 @@ onMounted(() => {
   animation-play-state: paused;
 }
 
+.vinyl-outer-rim,
+.vinyl-groove-layer,
+.vinyl-brand-ring,
+.vinyl-ring,
+.vinyl-core,
+.disc-hole {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.vinyl-outer-rim {
+  inset: 0;
+  background:
+    radial-gradient(circle at center,
+      transparent 0 84.4%,
+      #050505 84.4% 87.2%,
+      var(--theme-color) 87.2% 91.4%,
+      #050505 91.4% 93.4%,
+      transparent 93.4% 100%);
+}
+
+.vinyl-brand-ring {
+  inset: 10.5%;
+}
+
+.vinyl-brand-ring .brand-char {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  margin-left: -7px;
+  transform-origin: 50% 0;
+  text-align: center;
+  font-size: clamp(9px, 1vw, 11px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: #0d0d0d;
+  text-transform: uppercase;
+}
+
+.brand-top .brand-char:nth-child(1) { transform: rotate(-84deg) translateY(-122px) rotate(180deg); }
+.brand-top .brand-char:nth-child(2) { transform: rotate(-70deg) translateY(-122px) rotate(180deg); }
+.brand-top .brand-char:nth-child(3) { transform: rotate(-56deg) translateY(-122px) rotate(180deg); }
+.brand-top .brand-char:nth-child(4) { transform: rotate(-42deg) translateY(-122px) rotate(180deg); }
+.brand-top .brand-char:nth-child(5) { transform: rotate(-28deg) translateY(-122px) rotate(180deg); }
+.brand-top .brand-char:nth-child(6) { transform: rotate(-14deg) translateY(-122px) rotate(180deg); }
+.brand-top .brand-char:nth-child(7) { transform: rotate(0deg) translateY(-122px) rotate(180deg); }
+.brand-top .brand-char:nth-child(8) { transform: rotate(14deg) translateY(-122px) rotate(180deg); }
+.brand-top .brand-char:nth-child(9) { transform: rotate(28deg) translateY(-122px) rotate(180deg); }
+.brand-top .brand-char:nth-child(10) { transform: rotate(42deg) translateY(-122px) rotate(180deg); }
+.brand-top .brand-char:nth-child(11) { transform: rotate(56deg) translateY(-122px) rotate(180deg); }
+.brand-top .brand-char:nth-child(12) { transform: rotate(70deg) translateY(-122px) rotate(180deg); }
+.brand-top .brand-char:nth-child(13) { transform: rotate(84deg) translateY(-122px) rotate(180deg); }
+
+.brand-bottom .brand-char:nth-child(1) { transform: rotate(96deg) translateY(-122px); }
+.brand-bottom .brand-char:nth-child(2) { transform: rotate(110deg) translateY(-122px); }
+.brand-bottom .brand-char:nth-child(3) { transform: rotate(124deg) translateY(-122px); }
+.brand-bottom .brand-char:nth-child(4) { transform: rotate(138deg) translateY(-122px); }
+.brand-bottom .brand-char:nth-child(5) { transform: rotate(152deg) translateY(-122px); }
+.brand-bottom .brand-char:nth-child(6) { transform: rotate(166deg) translateY(-122px); }
+.brand-bottom .brand-char:nth-child(7) { transform: rotate(180deg) translateY(-122px); }
+.brand-bottom .brand-char:nth-child(8) { transform: rotate(194deg) translateY(-122px); }
+.brand-bottom .brand-char:nth-child(9) { transform: rotate(208deg) translateY(-122px); }
+.brand-bottom .brand-char:nth-child(10) { transform: rotate(222deg) translateY(-122px); }
+.brand-bottom .brand-char:nth-child(11) { transform: rotate(236deg) translateY(-122px); }
+.brand-bottom .brand-char:nth-child(12) { transform: rotate(250deg) translateY(-122px); }
+.brand-bottom .brand-char:nth-child(13) { transform: rotate(264deg) translateY(-122px); }
+
+.vinyl-groove-layer {
+  inset: 8.8%;
+  background:
+    radial-gradient(circle at center,
+      transparent 0 58%,
+      rgba(255, 255, 255, 0.07) 58.2% 58.6%,
+      transparent 58.8% 62.4%,
+      rgba(255, 255, 255, 0.05) 62.6% 63%,
+      transparent 63.2% 66.8%,
+      rgba(255, 255, 255, 0.04) 67% 67.35%,
+      transparent 67.55% 71.2%,
+      rgba(255, 255, 255, 0.05) 71.4% 71.75%,
+      transparent 71.95% 75.8%,
+      rgba(255, 255, 255, 0.04) 76% 76.3%,
+      transparent 76.5% 100%);
+}
+
 .vinyl-disc.spinning {
   animation-play-state: running;
 }
 
 .vinyl-ring {
-  position: absolute;
   inset: 8%;
-  border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
@@ -777,9 +894,7 @@ onMounted(() => {
 .ring-3 { inset: 28%; }
 
 .vinyl-core {
-  position: absolute;
   inset: 24%;
-  border-radius: 50%;
   overflow: hidden;
   box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.04);
 }
@@ -1042,6 +1157,10 @@ onMounted(() => {
   cursor: pointer;
   text-align: center;
   margin-bottom: 8px;
+}
+
+.lyrics-panel.no-original-lyrics .lyrics-collapse-btn {
+  color: var(--theme-color);
 }
 
 .lyrics-scroll {

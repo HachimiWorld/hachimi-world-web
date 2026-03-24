@@ -626,6 +626,26 @@ export const usePlayerStore = defineStore('player', () => {
     }
   }
 
+  function reorderLocalQueue(fromIndex: number, toIndex: number) {
+    if (!isLocalTarget.value) return
+    if (fromIndex === toIndex) return
+    if (fromIndex < 0 || toIndex < 0 || fromIndex >= queue.value.length || toIndex >= queue.value.length) return
+    const newQueue = [...queue.value]
+    const [moved] = newQueue.splice(fromIndex, 1)
+    newQueue.splice(toIndex, 0, moved)
+    const wasCurrentIndex = currentIndex.value
+    queue.value = newQueue
+    // 更新 currentIndex 跟随被移动的歌曲
+    if (wasCurrentIndex === fromIndex) {
+      currentIndex.value = toIndex
+    } else if (fromIndex < wasCurrentIndex && toIndex >= wasCurrentIndex) {
+      currentIndex.value = wasCurrentIndex - 1
+    } else if (fromIndex > wasCurrentIndex && toIndex <= wasCurrentIndex) {
+      currentIndex.value = wasCurrentIndex + 1
+    }
+    persistState(true)
+  }
+
   async function removeLocalSong(index: number) {
     if (!isLocalTarget.value) return
     if (index < 0 || index >= queue.value.length) return
@@ -722,6 +742,7 @@ export const usePlayerStore = defineStore('player', () => {
     addSongToCloudPlaylist,
     replaceLocalQueueAndPlay,
     removeLocalSong,
+    reorderLocalQueue,
     clearPlayer,
   }
 })

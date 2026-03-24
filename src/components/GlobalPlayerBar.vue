@@ -38,6 +38,39 @@ const createName = ref('')
 const createDescription = ref('')
 const createIsPublic = ref(false)
 
+// 本地歌单拖拽排序
+const dragFromIndex = ref<number | null>(null)
+const dragOverIndex = ref<number | null>(null)
+
+function onDragStart(e: DragEvent, index: number) {
+  dragFromIndex.value = index
+  dragOverIndex.value = index
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', String(index))
+  }
+}
+
+function onDragOver(e: DragEvent, index: number) {
+  e.preventDefault()
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move'
+  dragOverIndex.value = index
+}
+
+function onDrop(e: DragEvent, toIndex: number) {
+  e.preventDefault()
+  if (dragFromIndex.value !== null && dragFromIndex.value !== toIndex) {
+    playerStore.reorderLocalQueue(dragFromIndex.value, toIndex)
+  }
+  dragFromIndex.value = null
+  dragOverIndex.value = null
+}
+
+function onDragEnd() {
+  dragFromIndex.value = null
+  dragOverIndex.value = null
+}
+
 const modeOptions: { id: PlayerPlayMode; label: string; icon: unknown }[] = [
   { id: 'sequence', label: '顺序播放', icon: Headset },
   { id: 'loop', label: '循环播放', icon: RefreshRight },
@@ -363,15 +396,34 @@ async function handleCreateCloudPlaylist() {
           </div>
         </div>
 
-        <div v-if="playerStore.queue.length" class="queue-list">
-          <button
+        <div
+          v-if="playerStore.queue.length"
+          class="queue-list"
+        >
+          <div
             v-for="(item, index) in playerStore.queue"
             :key="`${item.songId}-${index}`"
             class="queue-item"
-            :class="{ active: index === playerStore.currentIndex }"
+            :class="{
+              active: index === playerStore.currentIndex,
+              'drag-over': playerStore.isLocalTarget && dragOverIndex === index && dragFromIndex !== index,
+              'dragging': playerStore.isLocalTarget && dragFromIndex === index,
+            }"
+            :draggable="playerStore.isLocalTarget ? 'true' : 'false'"
             @click="playerStore.playAt(index)"
+            @dragstart="playerStore.isLocalTarget && onDragStart($event, index)"
+            @dragover="playerStore.isLocalTarget && onDragOver($event, index)"
+            @drop="playerStore.isLocalTarget && onDrop($event, index)"
+            @dragend="onDragEnd"
           >
-            <img :src="item.coverUrl" :alt="item.title" class="queue-cover">
+            <span v-if="playerStore.isLocalTarget" class="drag-handle">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+                <circle cx="5" cy="4" r="1.2"/><circle cx="11" cy="4" r="1.2"/>
+                <circle cx="5" cy="8" r="1.2"/><circle cx="11" cy="8" r="1.2"/>
+                <circle cx="5" cy="12" r="1.2"/><circle cx="11" cy="12" r="1.2"/>
+              </svg>
+            </span>
+            <img :src="item.coverUrl" :alt="item.title" class="queue-cover" draggable="false">
             <div class="queue-copy">
               <strong class="queue-song-title">{{ item.title }}</strong>
               <span class="queue-song-meta">{{ item.uploaderName }}</span>
@@ -385,7 +437,7 @@ async function handleCreateCloudPlaylist() {
             >
               <el-icon><Delete /></el-icon>
             </button>
-          </button>
+          </div>
         </div>
         <div v-else class="queue-empty">这个歌单暂时没有歌曲。</div>
       </div>
@@ -427,7 +479,7 @@ async function handleCreateCloudPlaylist() {
 
 .global-player-bar {
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) 320px;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 260px);
   gap: 16px;
   padding: 14px 18px;
   border-radius: 24px;
@@ -516,8 +568,8 @@ async function handleCreateCloudPlaylist() {
 .timeline-row {
   margin-top: 10px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 92px;
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
   align-items: center;
 }
 
@@ -545,7 +597,9 @@ async function handleCreateCloudPlaylist() {
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
+  gap: 5px;
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .player-control-block {
@@ -558,12 +612,20 @@ async function handleCreateCloudPlaylist() {
 
 .top-tools-row,
 .button-group {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: flex-end;
   gap: 6px;
-  width: 100%;
+  width: auto;
   flex-wrap: nowrap;
+}
+
+.top-tools-row {
+  align-self: flex-end;
+}
+
+.button-group {
+  align-self: flex-end;
 }
 
 .player-btn,
@@ -747,9 +809,47 @@ async function handleCreateCloudPlaylist() {
   cursor: pointer;
   text-align: left;
   transition: border-color 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  box-sizing: border-box;
 }
 
 .queue-item:hover .queue-delete-btn {
+  opacity: 1;
+}
+
+.queue-item[draggable='true'] {
+  cursor: grab;
+}
+
+.queue-item[draggable='true']:active {
+  cursor: grabbing;
+}
+
+.queue-item.dragging {
+  opacity: 0.4;
+}
+
+.queue-item.drag-over {
+  border-color: var(--theme-color);
+  background: var(--theme-color-light);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-color) 20%, transparent);
+}
+
+.drag-handle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  color: var(--hw-text-tertiary);
+  opacity: 0;
+  transition: opacity 0.15s;
+  cursor: grab;
+}
+
+.queue-item:hover .drag-handle {
   opacity: 1;
 }
 

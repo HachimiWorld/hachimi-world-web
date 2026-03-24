@@ -313,7 +313,7 @@ onMounted(async () => {
 <style scoped>
 .settings-view {
   min-height: calc(100vh - var(--hw-header-height));
-  padding: 0 16px;
+  padding: 0 16px 16px;
   background: var(--hw-bg-primary);
 }
 
