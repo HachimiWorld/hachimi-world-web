@@ -193,17 +193,21 @@ onMounted(() => {
       <template v-else-if="activeTab === 'mine'">
         <div v-if="myLoading" class="pv-list">
           <div v-for="i in 5" :key="i" class="pv-card-skeleton">
-            <el-skeleton animated>
-              <template #template>
-                <div class="pv-skel-inner">
-                  <el-skeleton-item variant="image" class="pv-skel-cover" />
-                  <div class="pv-skel-info">
-                    <el-skeleton-item variant="p" style="width:55%" />
-                    <el-skeleton-item variant="text" style="width:35%;margin-top:8px" />
-                  </div>
+            <div class="pv-skel-inner">
+              <div class="pv-skel-cover"></div>
+              <div class="pv-skel-info">
+                <div class="pv-skel-title-row">
+                  <div class="pv-skel-line pv-skel-name"></div>
+                  <div class="pv-skel-chip"></div>
                 </div>
-              </template>
-            </el-skeleton>
+                <div class="pv-skel-line pv-skel-meta"></div>
+                <div class="pv-skel-line pv-skel-desc"></div>
+              </div>
+              <div class="pv-skel-actions">
+                <div class="pv-skel-action"></div>
+                <div class="pv-skel-action"></div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -250,17 +254,20 @@ onMounted(() => {
       <template v-else-if="activeTab === 'favorites'">
         <div v-if="favLoading" class="pv-list">
           <div v-for="i in 5" :key="i" class="pv-card-skeleton">
-            <el-skeleton animated>
-              <template #template>
-                <div class="pv-skel-inner">
-                  <el-skeleton-item variant="image" class="pv-skel-cover" />
-                  <div class="pv-skel-info">
-                    <el-skeleton-item variant="p" style="width:55%" />
-                    <el-skeleton-item variant="text" style="width:35%;margin-top:8px" />
-                  </div>
+            <div class="pv-skel-inner">
+              <div class="pv-skel-cover"></div>
+              <div class="pv-skel-info">
+                <div class="pv-skel-title-row">
+                  <div class="pv-skel-line pv-skel-name"></div>
+                  <div class="pv-skel-chip"></div>
                 </div>
-              </template>
-            </el-skeleton>
+                <div class="pv-skel-line pv-skel-meta"></div>
+                <div class="pv-skel-line pv-skel-desc"></div>
+              </div>
+              <div class="pv-skel-actions single">
+                <div class="pv-skel-action"></div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -607,16 +614,81 @@ onMounted(() => {
   width: 72px;
   height: 72px;
   border-radius: 10px;
-}
-
-:deep(.pv-skel-cover.el-skeleton__image) {
-  width: 72px;
-  height: 72px;
-  border-radius: 10px;
+  background: linear-gradient(
+    90deg,
+    var(--hw-bg-primary) 25%,
+    var(--hw-bg-hover) 50%,
+    var(--hw-bg-primary) 75%
+  );
+  background-size: 400% 100%;
+  animation: el-skeleton-loading 1.4s ease infinite;
 }
 
 .pv-skel-info {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.pv-skel-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pv-skel-line,
+.pv-skel-chip,
+.pv-skel-action {
+  background: linear-gradient(
+    90deg,
+    var(--hw-bg-primary) 25%,
+    var(--hw-bg-hover) 50%,
+    var(--hw-bg-primary) 75%
+  );
+  background-size: 400% 100%;
+  animation: el-skeleton-loading 1.4s ease infinite;
+}
+
+.pv-skel-line {
+  height: 12px;
+  border-radius: 999px;
+}
+
+.pv-skel-name {
+  width: 42%;
+  height: 14px;
+}
+
+.pv-skel-chip {
+  width: 48px;
+  height: 20px;
+  border-radius: 999px;
+}
+
+.pv-skel-meta {
+  width: 36%;
+}
+
+.pv-skel-desc {
+  width: 68%;
+}
+
+.pv-skel-actions {
+  flex-shrink: 0;
+  display: flex;
+  gap: 4px;
+}
+
+.pv-skel-actions.single {
+  gap: 0;
+}
+
+.pv-skel-action {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
 }
 
 /* 空状态 */

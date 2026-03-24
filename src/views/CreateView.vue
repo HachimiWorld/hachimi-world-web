@@ -109,7 +109,7 @@ const originArtist = ref('')
 const originUrl = ref('')
 
 interface CrewItem { role: string; name: string }
-const crew = ref<CrewItem[]>([{ role: '主唱', name: '' }])
+const crew = ref<CrewItem[]>([])
 function addCrew() { crew.value.push({ role: '', name: '' }) }
 function removeCrew(i: number) { crew.value.splice(i, 1) }
 
@@ -334,7 +334,7 @@ async function handlePublish() {
           : null,
         derivative_info: null,
       },
-      production_crew: crew.value.map(c => ({ role: c.role, uid: null, name: c.name })),
+      production_crew: crew.value.filter(c => c.name.trim()).map(c => ({ role: c.role, uid: null, name: c.name.trim() })),
       external_links: links.value.filter(l => l.url.trim()),
       explicit: explicit.value,
       jmid: resolvedJmid,
@@ -355,7 +355,7 @@ function resetForm() {
   title.value = ''; subtitle.value = ''; description.value = ''; lyrics.value = ''
   explicit.value = false; creationType.value = 0
   originTitle.value = ''; originArtist.value = ''; originUrl.value = ''
-  crew.value = [{ role: '主唱', name: '' }]; links.value = []
+  crew.value = []; links.value = []
   selectedTags.value = []; jmid.value = ''
   jmidInputPrefix.value = ''; jmidInputNumber.value = ''
   jmidPrefixStatus.value = 'idle'; jmidFullStatus.value = 'idle'
@@ -487,14 +487,17 @@ onMounted(async () => {
                 <div class="form-row">
                   <label class="field-label">原作标题</label>
                   <input v-model="originTitle" class="field-input" placeholder="原作名称" />
+                  <p class="field-hint">如 D 大调卡农。</p>
                 </div>
                 <div class="form-row">
                   <label class="field-label">原作作者</label>
                   <input v-model="originArtist" class="field-input" placeholder="原作作者" />
+                  <p class="field-hint">涉及到多位艺术家的，暂时填写主要的一位歌手即可。</p>
                 </div>
                 <div class="form-row">
                   <label class="field-label">原作链接</label>
                   <input v-model="originUrl" class="field-input" placeholder="https://…（可选）" />
+                  <p class="field-hint">建议填写，请使用https://格式的链接。</p>
                 </div>
               </div>
             </div>
@@ -509,8 +512,9 @@ onMounted(async () => {
               <div v-for="(item, i) in crew" :key="i" class="crew-row">
                 <input v-model="item.role" class="field-input crew-role" placeholder="角色（如：主唱）" />
                 <input v-model="item.name" class="field-input crew-name" placeholder="名称" />
-                <button v-if="crew.length > 1" class="btn-remove" @click="removeCrew(i)">×</button>
+                <button class="btn-remove" @click="removeCrew(i)">×</button>
               </div>
+              <p v-if="crew.length === 0" class="empty-hint">暂无制作组成员</p>
             </div>
 
             <!-- 标签 -->
@@ -698,7 +702,7 @@ onMounted(async () => {
 
 /* Hero */
 .create-hero {
-  padding: 48px 24px 32px;
+  padding: 32px 24px 32px;
   text-align: center;
   background: linear-gradient(135deg, var(--hw-bg-secondary) 0%, var(--hw-bg-primary) 100%);
   border-bottom: 1px solid var(--hw-border);

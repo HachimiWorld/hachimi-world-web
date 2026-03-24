@@ -285,6 +285,21 @@ onMounted(async () => {
             <template v-else>—</template>
           </span>
         </div>
+
+        <div class="row-divider" />
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-name">反馈与建议</span>
+            <span class="setting-desc">在 GitHub Discussions 提交问题或建议</span>
+          </div>
+          <a
+            href="https://github.com/HachimiWorld/hachimi-world-client/discussions"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="github-link"
+          >GitHub</a>
+        </div>
       </div>
 
     </div>
@@ -557,6 +572,19 @@ onMounted(async () => {
   letter-spacing: 0.3px;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.github-link {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--theme-color);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.github-link:hover {
+  opacity: 0.75;
 }
 
 /* color-picker 触发器边框透明 */

@@ -367,15 +367,12 @@ onMounted(() => {
 
         <div v-else-if="songsLoading" class="song-grid">
           <div v-for="i in PAGE_SIZE" :key="i" class="song-skeleton-card">
-            <el-skeleton animated>
-              <template #template>
-                <el-skeleton-item variant="image" class="song-skel-cover" />
-                <div class="song-skel-info">
-                  <el-skeleton-item variant="p" style="width: 76%" />
-                  <el-skeleton-item variant="p" style="width: 52%; margin-top: 6px" />
-                </div>
-              </template>
-            </el-skeleton>
+            <div class="user-song-skel-cover"></div>
+            <div class="user-song-skel-info">
+              <div class="user-song-skel-line user-song-skel-title"></div>
+              <div class="user-song-skel-line user-song-skel-sub"></div>
+              <div class="user-song-skel-line user-song-skel-meta"></div>
+            </div>
           </div>
         </div>
 
@@ -416,18 +413,17 @@ onMounted(() => {
         </div>
         <div v-if="playlistsLoading" class="playlist-grid">
           <div v-for="i in 3" :key="i" class="playlist-skeleton-card">
-            <el-skeleton animated>
-              <template #template>
-                <div class="pl-skel-inner">
-                  <el-skeleton-item variant="image" class="pl-skel-cover" />
-                  <div class="pl-skel-info">
-                    <el-skeleton-item variant="p" style="width:65%" />
-                    <el-skeleton-item variant="p" style="width:40%;margin-top:8px" />
-                    <el-skeleton-item variant="text" style="width:90%;margin-top:10px" />
-                  </div>
+            <div class="pl-skel-inner">
+              <div class="pl-skel-cover"></div>
+              <div class="pl-skel-info">
+                <div class="pl-skel-topline">
+                  <div class="pl-skel-line pl-skel-name"></div>
+                  <div class="pl-skel-line pl-skel-count"></div>
                 </div>
-              </template>
-            </el-skeleton>
+                <div class="pl-skel-line pl-skel-desc"></div>
+                <div class="pl-skel-line pl-skel-desc short"></div>
+              </div>
+            </div>
           </div>
         </div>
         <div v-else class="playlist-grid">
@@ -699,21 +695,63 @@ onMounted(() => {
 }
 
 .song-skeleton-card {
+  background: var(--hw-bg-secondary);
+  border: none;
+  border-radius: 10px;
   overflow: hidden;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.song-skel-cover {
-  width: 100%;
-  display: block;
-}
-
-.song-skel-info {
-  padding: 10px 10px 12px;
-}
-
-:deep(.song-skel-cover .el-skeleton__image) {
+.user-song-skel-cover {
   width: 100%;
   aspect-ratio: 1;
+  display: block;
+  border-radius: 7px;
+  background: linear-gradient(
+    90deg,
+    var(--hw-bg-primary) 25%,
+    var(--hw-bg-hover) 50%,
+    var(--hw-bg-primary) 75%
+  );
+  background-size: 400% 100%;
+  animation: el-skeleton-loading 1.4s ease infinite;
+}
+
+.user-song-skel-info {
+  padding: 8px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.user-song-skel-line {
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--hw-bg-primary) 25%,
+    var(--hw-bg-hover) 50%,
+    var(--hw-bg-primary) 75%
+  );
+  background-size: 400% 100%;
+  animation: el-skeleton-loading 1.4s ease infinite;
+}
+
+.user-song-skel-title {
+  width: 85%;
+  height: 13px;
+}
+
+.user-song-skel-sub {
+  width: 55%;
+}
+
+.user-song-skel-meta {
+  width: 70%;
+  margin-top: 1px;
 }
 
 .hero-skeleton {
@@ -900,6 +938,7 @@ onMounted(() => {
   display: flex;
   gap: 14px;
   align-items: flex-start;
+  width: 100%;
 }
 
 .pl-skel-cover {
@@ -907,17 +946,62 @@ onMounted(() => {
   width: 80px;
   height: 80px;
   border-radius: 10px;
+  background: linear-gradient(
+    90deg,
+    var(--hw-bg-primary) 25%,
+    var(--hw-bg-hover) 50%,
+    var(--hw-bg-primary) 75%
+  );
+  background-size: 400% 100%;
+  animation: el-skeleton-loading 1.4s ease infinite;
 }
 
 .pl-skel-info {
   flex: 1;
-  padding-top: 4px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-:deep(.pl-skel-cover.el-skeleton__image) {
-  width: 80px;
-  height: 80px;
-  border-radius: 10px;
+.pl-skel-topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pl-skel-line {
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--hw-bg-primary) 25%,
+    var(--hw-bg-hover) 50%,
+    var(--hw-bg-primary) 75%
+  );
+  background-size: 400% 100%;
+  animation: el-skeleton-loading 1.4s ease infinite;
+}
+
+.pl-skel-name {
+  width: 58%;
+  height: 14px;
+}
+
+.pl-skel-count {
+  width: 42px;
+  flex-shrink: 0;
+}
+
+.pl-skel-desc {
+  width: 88%;
+  margin-top: 8px;
+}
+
+.pl-skel-desc.short {
+  width: 68%;
+  margin-top: 6px;
 }
 
 @media (max-width: 1100px) {

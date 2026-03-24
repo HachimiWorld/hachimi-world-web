@@ -795,6 +795,7 @@ onMounted(() => {
   padding: 0 4px 0 0;
   scrollbar-width: thin;
   scrollbar-color: var(--hw-border) transparent;
+  text-align: center;
 }
 
 .lyric-line {
