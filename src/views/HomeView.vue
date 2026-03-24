@@ -215,6 +215,7 @@ onUnmounted(() => {
         :loading="section.loading"
         :has-more="section.hasMore"
         :loading-more="section.loadingMore"
+        :more-route="'/tag/' + encodeURIComponent(section.tag.name)"
         @load-more="loadTagSongs(idx, true)"
       />
     </template>

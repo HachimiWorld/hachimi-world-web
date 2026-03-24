@@ -59,6 +59,16 @@ const router = createRouter({
       name: 'playlist-detail',
       component: () => import('../views/PlaylistDetailView.vue'),
     },
+    {
+      path: '/recent',
+      name: 'recent',
+      component: () => import('../views/RecentView.vue'),
+    },
+    {
+      path: '/tag/:name',
+      name: 'tag',
+      component: () => import('../views/TagView.vue'),
+    },
   ],
 })
 
