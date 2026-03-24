@@ -479,7 +479,7 @@ async function handleCreateCloudPlaylist() {
 
 .global-player-bar {
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(0, 260px);
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 16px;
   padding: 14px 18px;
   border-radius: 24px;
@@ -608,16 +608,17 @@ async function handleCreateCloudPlaylist() {
   align-items: flex-end;
   justify-content: space-between;
   min-height: 68px;
+  flex-shrink: 0;
 }
 
 .top-tools-row,
 .button-group {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-end;
   gap: 6px;
   width: auto;
   flex-wrap: nowrap;
+  flex-shrink: 0;
 }
 
 .top-tools-row {
@@ -1035,13 +1036,19 @@ async function handleCreateCloudPlaylist() {
   }
 
   .player-control-block {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
     min-height: unset;
     gap: 8px;
   }
 
-  .top-tools-row,
+  .top-tools-row {
+    align-self: center;
+  }
+
   .button-group {
-    justify-content: center;
+    align-self: center;
   }
 }
 
@@ -1063,16 +1070,11 @@ async function handleCreateCloudPlaylist() {
   }
 
   .player-control-block {
+    justify-content: space-between;
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
+    min-height: unset;
     gap: 10px;
-  }
-
-  .top-tools-row,
-  .button-group {
-    width: auto;
-    flex-shrink: 0;
   }
 
   .timeline-row {
