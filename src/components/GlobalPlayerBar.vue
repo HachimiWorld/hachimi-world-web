@@ -1019,14 +1019,31 @@ async function handleCreateCloudPlaylist() {
 
 :deep(.el-slider__runway) {
   margin: 0;
+  height: 3px;
 }
 
 :deep(.el-slider__bar) {
   background: var(--theme-color);
+  height: 3px;
 }
 
 :deep(.el-slider__button) {
   border-color: var(--theme-color);
+  border-radius: 3px;
+  width: 4px;
+  height: 14px;
+  border-width: 2px;
+}
+
+:deep(.el-slider__button-wrapper) {
+  top: 50%;
+  transform: translateX(-50%) translateY(-50%);
+}
+
+:deep(.el-slider__button-wrapper:hover),
+:deep(.el-slider__button-wrapper.dragging) {
+  top: 50%;
+  transform: translateX(-50%) translateY(-50%);
 }
 
 @media (max-width: 980px) {

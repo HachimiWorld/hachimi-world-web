@@ -116,7 +116,8 @@ function isActive(path: string) {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 20px;
+  padding: 8px 20px;
+  margin-bottom: 6px;
   border: none;
   background: transparent;
   color: var(--hw-text-primary);
@@ -124,7 +125,7 @@ function isActive(path: string) {
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
   text-align: left;
-  border-radius: 0;
+  border-radius: 6px;
 }
 
 .sidebar-nav-item:hover {
