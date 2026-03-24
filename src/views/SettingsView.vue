@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useThemeStore } from '@/stores/theme'
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/user'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { Moon, Sunny } from '@element-plus/icons-vue'
 import LoginDialog from '@/components/LoginDialog.vue'
+import { http } from '@/api/request'
 
 const themeStore = useThemeStore()
 const authStore = useAuthStore()
@@ -70,6 +71,31 @@ async function handleLogout() {
 
 // 设备名
 const deviceName = computed(() => authStore.deviceName)
+
+// ── 服务器版本 ──
+interface ServerVersion {
+  version: number
+  min_version: number
+}
+const serverVersion = ref<ServerVersion | null>(null)
+
+// 将版本号 260121 格式化为 "26.01.21"
+function formatVersion(v: number): string {
+  const s = String(v)
+  // 格式：YYMMDD，6位
+  if (s.length === 6) {
+    return `${s.slice(0, 2)}.${s.slice(2, 4)}.${s.slice(4, 6)}`
+  }
+  return s
+}
+
+onMounted(async () => {
+  try {
+    serverVersion.value = await http.get<ServerVersion>('/version/server')
+  } catch {
+    // 获取失败不影响页面
+  }
+})
 </script>
 
 <template>
@@ -252,7 +278,12 @@ const deviceName = computed(() => authStore.deviceName)
             <span class="setting-name">基米天堂</span>
             <span class="setting-desc">一个由社区为爱发电驱动的开源音乐平台</span>
           </div>
-          <span class="version-tag">v1.0.0</span>
+          <span class="version-tag">
+            <template v-if="serverVersion">
+              v{{ formatVersion(serverVersion.version) }}
+            </template>
+            <template v-else>—</template>
+          </span>
         </div>
       </div>
 

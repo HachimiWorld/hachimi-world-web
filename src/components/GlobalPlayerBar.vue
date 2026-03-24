@@ -17,15 +17,18 @@ import {
   Lock,
   Link,
   Delete,
+  InfoFilled,
 } from '@element-plus/icons-vue'
 import { createPlaylist } from '@/api/playlist'
 import { usePlayerStore } from '@/stores/player'
 import { useUserStore } from '@/stores/user'
 import type { PlayerPlayMode } from '@/stores/player'
 import { ApiError } from '@/api/request'
+import { useRouter } from 'vue-router'
 
 const playerStore = usePlayerStore()
 const userStore = useUserStore()
+const router = useRouter()
 const modePanelOpen = ref(false)
 const volumePanelOpen = ref(false)
 const playlistPanelOpen = ref(false)
@@ -215,6 +218,14 @@ async function handleCreateCloudPlaylist() {
 
       <div class="player-control-block">
         <div class="top-tools-row">
+          <button
+            class="icon-tool-btn"
+            :disabled="!playerStore.currentSong"
+            :title="playerStore.currentSong ? '查看歌曲详情' : ''"
+            @click="playerStore.currentSong && router.push('/song/' + playerStore.currentSong.songId)"
+          >
+            <el-icon><InfoFilled /></el-icon>
+          </button>
           <button class="icon-tool-btn" @click="toggleVolumePanel">
             <el-icon><Microphone /></el-icon>
           </button>
@@ -339,7 +350,17 @@ async function handleCreateCloudPlaylist() {
               {{ playerStore.playlistName }} · 共 {{ playerStore.queue.length }} 首
             </p>
           </div>
-          <button class="queue-close-btn" @click="playerStore.toggleQueuePanel">收起</button>
+          <div class="queue-head-actions">
+            <button
+              v-if="!playerStore.isLocalTarget && playerStore.currentPlaylistId"
+              class="queue-manage-btn"
+              title="管理歌单"
+              @click="router.push('/playlist/' + playerStore.currentPlaylistId); playerStore.closePanels()"
+            >
+              管理
+            </button>
+            <button class="queue-close-btn" @click="playerStore.toggleQueuePanel">收起</button>
+          </div>
         </div>
 
         <div v-if="playerStore.queue.length" class="queue-list">
@@ -662,6 +683,30 @@ async function handleCreateCloudPlaylist() {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.queue-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.queue-manage-btn {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--hw-border);
+  background: transparent;
+  color: var(--theme-color);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.queue-manage-btn:hover {
+  background: var(--theme-color-light);
 }
 
 .queue-title,

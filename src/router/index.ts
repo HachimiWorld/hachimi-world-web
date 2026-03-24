@@ -65,6 +65,16 @@ const router = createRouter({
       component: () => import('../views/RecentView.vue'),
     },
     {
+      path: '/hot',
+      name: 'hot',
+      component: () => import('../views/HotView.vue'),
+    },
+    {
+      path: '/recommend',
+      name: 'recommend',
+      component: () => import('../views/RecommendView.vue'),
+    },
+    {
       path: '/tag/:name',
       name: 'tag',
       component: () => import('../views/TagView.vue'),

@@ -1,100 +1,52 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import SongCard from '@/components/SongCard.vue'
-import { getSongsByTag } from '@/api/song'
-import type { SearchSongItem } from '@/api/song'
+import { getRecommendSongs } from '@/api/song'
+import type { Song } from '@/api/song'
 import { ApiError } from '@/api/request'
 
-const route = useRoute()
 const router = useRouter()
 
-const tagName = ref(decodeURIComponent(route.params.name as string))
-const songs = ref<SearchSongItem[]>([])
+// 推荐接口一次性返回全量，无需分页
+const songs = ref<Song[]>([])
 const loading = ref(false)
-const loadingMore = ref(false)
-const hasMore = ref(true)
-const offset = ref(0)
-const PAGE_SIZE = 24
 
-async function loadSongs(reset = false) {
-  if (reset) {
-    songs.value = []
-    offset.value = 0
-    hasMore.value = true
-  }
-  if (!hasMore.value) return
-  if (reset) loading.value = true
-  else loadingMore.value = true
-
+async function loadSongs() {
+  loading.value = true
   try {
-    const resp = await getSongsByTag({
-      tagName: tagName.value,
-      limit: PAGE_SIZE,
-      offset: offset.value,
-    })
-    songs.value = reset ? resp.hits : [...songs.value, ...resp.hits]
-    offset.value += resp.hits.length
-    hasMore.value = resp.hits.length === PAGE_SIZE
+    const resp = await getRecommendSongs()
+    songs.value = resp.songs
   } catch (e) {
-    console.error('加载标签歌曲失败', e instanceof ApiError ? e.msg : e)
+    console.error('加载推荐歌曲失败', e instanceof ApiError ? e.msg : e)
   } finally {
     loading.value = false
-    loadingMore.value = false
   }
 }
-
-// 滚动到底部自动加载
-let scrollTimer: ReturnType<typeof setTimeout> | null = null
-function onScroll() {
-  if (scrollTimer) return
-  scrollTimer = setTimeout(() => {
-    scrollTimer = null
-    const scrolled = window.scrollY + window.innerHeight
-    const total = document.documentElement.scrollHeight
-    if (total - scrolled < 400 && hasMore.value && !loadingMore.value) {
-      loadSongs()
-    }
-  }, 150)
-}
-
-watch(
-  () => route.params.name,
-  (val) => {
-    tagName.value = decodeURIComponent(val as string)
-    loadSongs(true)
-  }
-)
 
 onMounted(() => {
-  loadSongs(true)
-  window.addEventListener('scroll', onScroll, { passive: true })
-})
-
-onUnmounted(() => {
-  window.removeEventListener('scroll', onScroll)
-  if (scrollTimer) clearTimeout(scrollTimer)
+  loadSongs()
 })
 </script>
 
 <template>
-  <div class="tag-view">
+  <div class="recommend-view">
     <!-- 头部 -->
-    <div class="tag-header">
+    <div class="page-header">
       <button class="back-btn" @click="router.back()">
         <el-icon><ArrowLeft /></el-icon>
         <span>返回</span>
       </button>
-      <div class="tag-title-wrap">
-        <span class="tag-badge">#</span>
-        <h1 class="tag-title">{{ tagName }}</h1>
+      <div class="page-title-wrap">
+        <h1 class="page-title">每日推荐</h1>
+        <span class="page-subtitle">并非根据你的口味进行推荐</span>
       </div>
     </div>
 
     <!-- 骨架屏 -->
     <div v-if="loading" class="songs-grid">
-      <div v-for="i in PAGE_SIZE" :key="i" class="skeleton-card">
+      <div v-for="i in 24" :key="i" class="skeleton-card">
         <div class="skel-cover-wrap">
           <el-skeleton animated>
             <template #template>
@@ -123,35 +75,24 @@ onUnmounted(() => {
       />
     </div>
 
-    <!-- 加载更多指示 -->
-    <div v-if="loadingMore" class="loading-more">
-      <el-icon class="is-loading"><Loading /></el-icon>
-      <span>加载中…</span>
-    </div>
-
-    <!-- 没有更多 -->
-    <div v-if="!loading && !loadingMore && !hasMore && songs.length > 0" class="no-more">
-      已加载全部 {{ songs.length }} 首歌曲
-    </div>
-
     <!-- 空状态 -->
     <div v-if="!loading && songs.length === 0" class="empty-state">
-      <p>该标签下暂无歌曲</p>
+      <p>暂无推荐歌曲</p>
     </div>
   </div>
 </template>
 
 <style scoped>
-.tag-view {
+.recommend-view {
   padding-top: 8px;
-  padding-bottom: 60px;
+  padding-bottom: 80px;
 }
 
-.tag-header {
+.page-header {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 28px;
+  margin-bottom: 32px;
   flex-wrap: wrap;
 }
 
@@ -173,20 +114,14 @@ onUnmounted(() => {
   color: var(--theme-color);
 }
 
-.tag-title-wrap {
+.page-title-wrap {
   display: flex;
   align-items: baseline;
-  gap: 6px;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.tag-badge {
-  font-size: 28px;
-  font-weight: 800;
-  color: var(--theme-color);
-  line-height: 1;
-}
-
-.tag-title {
+.page-title {
   font-size: 26px;
   font-weight: 700;
   color: var(--hw-text-primary);
@@ -194,7 +129,11 @@ onUnmounted(() => {
   line-height: 1;
 }
 
-/* 歌曲网格：PC 6列，响应式缩减 */
+.page-subtitle {
+  font-size: 13px;
+  color: var(--hw-text-tertiary);
+}
+
 .songs-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -217,7 +156,6 @@ onUnmounted(() => {
   .songs-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
 }
 
-/* 骨架屏卡片 */
 .skeleton-card {
   background: var(--hw-bg-secondary);
   border-radius: 10px;
@@ -243,28 +181,11 @@ onUnmounted(() => {
   padding: 8px 10px 10px;
 }
 
-.loading-more {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 24px 0;
-  color: var(--hw-text-secondary);
-  font-size: 14px;
-}
-
-.no-more {
-  text-align: center;
-  color: var(--hw-text-tertiary);
-  font-size: 13px;
-  padding: 24px 0 8px;
-}
-
 .empty-state {
   text-align: center;
   color: var(--hw-text-secondary);
   font-size: 15px;
-  padding: 60px 0;
+  padding: 80px 0;
 }
 </style>
 

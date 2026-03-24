@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
@@ -67,18 +67,79 @@ const originalWorkText = computed(() => {
     .join(' / ')
 })
 
-const lyricLines = computed(() => {
-  const text = song.value?.lyrics?.trim()
-  if (!text) return []
-  return text
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
+// ── LRC 歌词处理 ──
+interface LrcLine {
+  time: number   // 秒
+  text: string
+}
+
+function isLrc(text: string): boolean {
+  return /\[\d{2}:\d{2}[.:]\d{2,3}\]/.test(text)
+}
+
+function parseLrc(text: string): LrcLine[] {
+  const lines: LrcLine[] = []
+  const regex = /\[(\d{2}):(\d{2})[.:](\d{2,3})\](.*)/g
+  let match
+  while ((match = regex.exec(text)) !== null) {
+    const mm = parseInt(match[1])
+    const ss = parseInt(match[2])
+    const ms = parseInt(match[3].length === 2 ? match[3] + '0' : match[3])
+    const time = mm * 60 + ss + ms / 1000
+    const lineText = match[4].trim()
+    lines.push({ time, text: lineText })
+  }
+  return lines.sort((a, b) => a.time - b.time)
+}
+
+const lrcLines = computed<LrcLine[]>(() => {
+  const raw = song.value?.lyrics
+  if (!raw || !raw.trim()) {
+    // 情况1：空歌词
+    return [{ time: 0, text: '填词时间' }]
+  }
+  const text = raw.trim()
+  if (isLrc(text)) {
+    // 情况3：已是 lrc 格式
+    return parseLrc(text)
+  }
+  // 情况2：纯文本，每行加 [00:00.000]
+  return text.split(/\r?\n/).map((line) => ({ time: 0, text: line.trim() })).filter(l => l.text)
 })
 
+// 是否正在播放这首歌
 const isCurrentSongPlaying = computed(() => {
   if (!song.value || !playerStore.currentSong) return false
   return playerStore.currentSong.songId === song.value.id && playerStore.isPlaying
+})
+
+// 是否是当前歌曲（不管是否在播放）
+const isCurrentSong = computed(() => {
+  if (!song.value || !playerStore.currentSong) return false
+  return playerStore.currentSong.songId === song.value.id
+})
+
+// 当前高亮行索引
+const activeLrcIndex = computed(() => {
+  if (!isCurrentSong.value || lrcLines.value.length === 0) return -1
+  const t = playerStore.currentTime
+  let idx = 0
+  for (let i = 0; i < lrcLines.value.length; i++) {
+    if (lrcLines.value[i].time <= t) idx = i
+    else break
+  }
+  return idx
+})
+
+// 自动滚动歌词
+const lyricsEl = ref<HTMLElement | null>(null)
+
+watch(activeLrcIndex, (idx) => {
+  if (idx < 0 || !lyricsEl.value) return
+  const lines = lyricsEl.value.querySelectorAll('.lyric-line')
+  const el = lines[idx] as HTMLElement | undefined
+  if (!el) return
+  el.scrollIntoView({ block: 'center', behavior: 'smooth' })
 })
 
 const infoRows = computed(() => {
@@ -247,13 +308,19 @@ onMounted(() => {
 
             <aside class="lyrics-panel">
               <div class="lyrics-title">歌词</div>
-              <div v-if="lyricLines.length" class="lyrics-scroll">
-                <p v-for="(line, index) in lyricLines" :key="`${index}-${line}`" class="lyric-line">
-                  {{ line }}
+              <div ref="lyricsEl" class="lyrics-scroll">
+                <p
+                  v-for="(line, index) in lrcLines"
+                  :key="index"
+                  class="lyric-line"
+                  :class="{
+                    'lyric-active': isCurrentSong && index === activeLrcIndex,
+                    'lyric-past': isCurrentSong && index < activeLrcIndex,
+                    'lyric-inactive': !isCurrentSong,
+                  }"
+                >
+                  {{ line.text || '\u266a' }}
                 </p>
-              </div>
-              <div v-else class="lyrics-empty">
-                这首歌暂时还没有公开歌词。
               </div>
             </aside>
           </div>
@@ -695,19 +762,34 @@ onMounted(() => {
   padding-right: 4px;
 }
 
-.lyric-line,
-.lyrics-empty {
-  color: var(--hw-text-secondary);
+.lyric-line {
   line-height: 1.9;
   font-size: 14px;
+  padding: 4px 0;
+  transition: color 0.3s ease, font-size 0.3s ease, font-weight 0.3s ease;
+  color: var(--hw-text-tertiary);
+  cursor: default;
 }
 
 .lyric-line + .lyric-line {
-  margin-top: 6px;
+  margin-top: 2px;
 }
 
-.lyrics-empty {
-  margin-top: 18px;
+/* 未同步播放时全部普通颜色 */
+.lyric-line.lyric-inactive {
+  color: var(--hw-text-secondary);
+}
+
+/* 已过去的行 */
+.lyric-line.lyric-past {
+  color: var(--hw-text-tertiary);
+}
+
+/* 当前高亮行 */
+.lyric-line.lyric-active {
+  color: var(--theme-color);
+  font-size: 15px;
+  font-weight: 700;
 }
 
 .detail-loading-card {
