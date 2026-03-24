@@ -1,3 +1,41 @@
+/* ===== 全局滚动条样式（可被局部 CSS 覆盖）===== */
+:root {
+  --hw-scrollbar-width: 6px;
+  --hw-scrollbar-thumb: rgba(0, 0, 0, 0.18);
+  --hw-scrollbar-thumb-hover: rgba(0, 0, 0, 0.32);
+  --hw-scrollbar-track: transparent;
+}
+
+:root.dark {
+  --hw-scrollbar-thumb: rgba(255, 255, 255, 0.14);
+  --hw-scrollbar-thumb-hover: rgba(255, 255, 255, 0.26);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--hw-scrollbar-thumb) var(--hw-scrollbar-track);
+}
+
+/* WebKit */
+::-webkit-scrollbar {
+  width: var(--hw-scrollbar-width);
+  height: var(--hw-scrollbar-width);
+}
+
+::-webkit-scrollbar-track {
+  background: var(--hw-scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--hw-scrollbar-thumb);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--hw-scrollbar-thumb-hover);
+}
+
 /* ===== 全局重置 ===== */
 *,
 *::before,

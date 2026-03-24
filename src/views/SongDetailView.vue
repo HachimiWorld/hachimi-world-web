@@ -133,13 +133,20 @@ const activeLrcIndex = computed(() => {
 
 // 自动滚动歌词
 const lyricsEl = ref<HTMLElement | null>(null)
+const lyricsCollapsed = ref(false)
 
 watch(activeLrcIndex, (idx) => {
   if (idx < 0 || !lyricsEl.value) return
-  const lines = lyricsEl.value.querySelectorAll('.lyric-line')
-  const el = lines[idx] as HTMLElement | undefined
+  const lines = lyricsEl.value.querySelectorAll<HTMLElement>('.lyric-line')
+  const el = lines[idx]
   if (!el) return
-  el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  const container = lyricsEl.value
+  // getBoundingClientRect 计算相对偏移，不受 offsetParent 影响
+  const containerRect = container.getBoundingClientRect()
+  const elRect = el.getBoundingClientRect()
+  // el 相对 container 顶部的位置 + 当前 scrollTop = el 在 scrollable 内的绝对偏移
+  const elTopInContainer = elRect.top - containerRect.top + container.scrollTop
+  container.scrollTop = elTopInContainer - container.clientHeight / 2 + el.offsetHeight / 2
 })
 
 const infoRows = computed(() => {
@@ -306,9 +313,11 @@ onMounted(() => {
               </div>
             </div>
 
-            <aside class="lyrics-panel">
-              <div class="lyrics-title">歌词</div>
-              <div ref="lyricsEl" class="lyrics-scroll">
+            <aside class="lyrics-panel" :class="{ collapsed: lyricsCollapsed }">
+              <button class="lyrics-collapse-btn" @click="lyricsCollapsed = !lyricsCollapsed">
+                {{ lyricsCollapsed ? '展开歌词' : '收起歌词' }}
+              </button>
+              <div v-show="!lyricsCollapsed" ref="lyricsEl" class="lyrics-scroll">
                 <p
                   v-for="(line, index) in lrcLines"
                   :key="index"
@@ -442,12 +451,16 @@ onMounted(() => {
   grid-template-columns: 330px minmax(0, 1fr);
   gap: 28px;
   padding: 0;
+  align-items: start;
 }
 
 .left-column {
   display: flex;
   flex-direction: column;
   gap: 22px;
+  /* sticky 让左列跟着右侧高度走，lyrics-panel 撑满剩余 */
+  position: sticky;
+  top: calc(var(--hw-header-height) + 16px);
 }
 
 .cover-stage {
@@ -475,8 +488,7 @@ onMounted(() => {
 }
 
 .vinyl-shell {
-  position: sticky;
-  top: calc(var(--hw-header-height) + 26px);
+  /* 不需要再单独 sticky，由 left-column 负责 */
 }
 
 .vinyl-disc {
@@ -749,17 +761,40 @@ onMounted(() => {
 
 .lyrics-panel {
   margin-top: 0;
-  padding: 18px 18px 10px;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  min-height: 360px;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  overflow: hidden;
+  /* PC 端高度 = 唱片直径 */
+  height: min(320px, 72vw);
+}
+
+.lyrics-collapse-btn {
+  /* 仅手机端显示，PC 端隐藏 */
+  display: none;
+  width: 100%;
+  padding: 8px 0;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--hw-border);
+  color: var(--hw-text-tertiary);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: center;
+  margin-bottom: 8px;
 }
 
 .lyrics-scroll {
-  margin-top: 14px;
-  overflow: auto;
   flex: 1;
-  padding-right: 4px;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 4px 0 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--hw-border) transparent;
 }
 
 .lyric-line {
@@ -830,6 +865,7 @@ onMounted(() => {
 
   .left-column {
     order: 1;
+    position: static;
   }
 
   .hero-main {
@@ -844,8 +880,25 @@ onMounted(() => {
     position: static;
   }
 
+  /* 手机端：歌词容器高度与唱片一致，文字居中 */
   .lyrics-panel {
-    min-height: 320px;
+    height: min(280px, 78vw);
+  }
+
+  /* 折叠时只保留按钮高度 */
+  .lyrics-panel.collapsed {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  /* v-show 控制，不再需要 display:none */
+
+  .lyrics-collapse-btn {
+    display: block;
+  }
+
+  .lyrics-scroll {
+    text-align: center;
   }
 }
 
