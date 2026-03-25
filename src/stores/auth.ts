@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { refreshToken as apiRefreshToken } from '@/api/auth'
 import { useUserStore } from './user'
+import { usePlayerStore } from './player'
 
 // localStorage key 常量
 const KEY_ACCESS_TOKEN = 'hachimi_access_token'
@@ -87,6 +88,9 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem(KEY_UID)
     localStorage.removeItem(KEY_USERNAME)
     localStorage.removeItem(KEY_AVATAR_URL)
+
+    const playerStore = usePlayerStore()
+    playerStore.clearCloudPlayerState()
 
     const userStore = useUserStore()
     userStore.logout()

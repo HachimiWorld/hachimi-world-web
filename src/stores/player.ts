@@ -164,6 +164,54 @@ export const usePlayerStore = defineStore('player', () => {
     playlistName.value = current?.playlistName || '云端歌单'
   }
 
+  function isCloudTargetKey(key: string) {
+    return key.startsWith('cloud:')
+  }
+
+  function clearCloudPersistedState() {
+    if (typeof window === 'undefined') return
+    const keysToRemove: string[] = []
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i)
+      if (!key) continue
+      if (key.startsWith(TARGET_STATE_PREFIX) && key.slice(TARGET_STATE_PREFIX.length).startsWith('cloud:')) {
+        keysToRemove.push(key)
+      }
+    }
+    for (const key of keysToRemove) {
+      localStorage.removeItem(key)
+    }
+    const currentTarget = localStorage.getItem(CURRENT_KEY_STORAGE)
+    if (currentTarget && isCloudTargetKey(currentTarget)) {
+      localStorage.removeItem(CURRENT_KEY_STORAGE)
+    }
+  }
+
+  function restorePreferredTarget(isLoggedIn: boolean) {
+    const storedTarget = typeof window !== 'undefined'
+      ? localStorage.getItem(CURRENT_KEY_STORAGE)
+      : null
+
+    if (storedTarget && storedTarget === LOCAL_TARGET_KEY) {
+      targetKey.value = LOCAL_TARGET_KEY
+      restoreTargetState(LOCAL_TARGET_KEY)
+      setCurrentTargetName()
+      return
+    }
+
+    if (isLoggedIn && storedTarget && isCloudTargetKey(storedTarget)) {
+      const matched = availableTargets.value.find((item) => item.key === storedTarget)
+      if (matched) {
+        targetKey.value = storedTarget
+        restoreTargetState(storedTarget)
+        setCurrentTargetName()
+        return
+      }
+    }
+
+    switchToLocal()
+  }
+
   function createAudio() {
     if (audio || typeof window === 'undefined') return
 
@@ -360,6 +408,13 @@ export const usePlayerStore = defineStore('player', () => {
     persistState(true)
   }
 
+  function clearCloudPlayerState() {
+    clearCloudPersistedState()
+    if (!isLocalTarget.value) {
+      switchToLocal()
+    }
+  }
+
   async function switchToPlaylist(key: string) {
     if (key === LOCAL_TARGET_KEY) {
       switchToLocal()
@@ -426,11 +481,18 @@ export const usePlayerStore = defineStore('player', () => {
       initialized.value = true
     }
 
+    const authStore = useAuthStore()
+    const isLoggedIn = authStore.isLoggedIn
+
     await refreshCloudPlaylists().catch(() => {
       cloudPlaylists.value = []
     })
 
-    switchToLocal()
+    if (!isLoggedIn) {
+      clearCloudPersistedState()
+    }
+
+    restorePreferredTarget(isLoggedIn)
   }
 
   function setPlayMode(mode: PlayerPlayMode) {
@@ -726,6 +788,7 @@ export const usePlayerStore = defineStore('player', () => {
     initialize,
     refreshCloudPlaylists,
     switchToLocal,
+    clearCloudPlayerState,
     switchToPlaylist,
     loadCloudPlaylist,
     refreshCurrentCloudPlaylist,
