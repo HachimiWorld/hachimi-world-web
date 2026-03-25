@@ -61,19 +61,22 @@ export interface PlaylistSearchResp extends SearchResultMeta {
   hits: PlaylistSearchItem[]
 }
 
-export type MusicSortBy = 'relevance' | 'release_time_desc' | 'release_time_asc'
+export type MusicSortBy = 'relevance' | 'release_time_desc' | 'release_time_asc' | 'play_count_desc' | 'play_count_asc'
+export type PlaylistSortBy = 'relevance' | 'create_time_desc' | 'create_time_asc' | 'update_time_desc' | 'update_time_asc'
 
 export function searchMusic(params: {
   q: string
   limit?: number
   offset?: number
   sortBy?: MusicSortBy
+  filter?: string
 }): Promise<MusicSearchResp> {
   const query = new URLSearchParams()
   query.set('q', params.q)
   if (params.limit !== undefined) query.set('limit', String(params.limit))
   if (params.offset !== undefined) query.set('offset', String(params.offset))
-  if (params.sortBy) query.set('sort_by', params.sortBy)
+  if (params.sortBy && params.sortBy !== 'relevance') query.set('sort_by', params.sortBy)
+  if (params.filter) query.set('filter', params.filter)
   return http.get<MusicSearchResp>(`/song/search?${query.toString()}`)
 }
 
@@ -93,11 +96,15 @@ export function searchPlaylists(params: {
   q: string
   limit?: number
   offset?: number
+  sortBy?: PlaylistSortBy
+  userId?: number
 }): Promise<PlaylistSearchResp> {
   const query = new URLSearchParams()
   query.set('q', params.q)
   if (params.limit !== undefined) query.set('limit', String(params.limit))
   if (params.offset !== undefined) query.set('offset', String(params.offset))
+  if (params.sortBy && params.sortBy !== 'relevance') query.set('sort_by', params.sortBy)
+  if (params.userId !== undefined) query.set('user_id', String(params.userId))
   return http.get<PlaylistSearchResp>(`/playlist/search?${query.toString()}`)
 }
 

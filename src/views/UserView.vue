@@ -779,24 +779,30 @@ onMounted(() => {
   --el-color-primary-light-7: color-mix(in srgb, var(--theme-color) 30%, white);
   --el-color-primary-light-8: color-mix(in srgb, var(--theme-color) 20%, white);
   --el-color-primary-light-9: color-mix(in srgb, var(--theme-color) 10%, white);
+  /* 覆盖 EP 内部 fill 变量，防止深色模式下 wrapper 被强制渲染为白色 */
+  --el-fill-color-blank: var(--hw-bg-input);
+  --el-input-bg-color: var(--hw-bg-input);
+  --el-text-color-regular: var(--hw-text-primary);
+  --el-text-color-placeholder: var(--hw-text-tertiary);
+  --el-border-color: var(--hw-border);
 }
 
 :deep(.el-select .el-input__wrapper) {
-  background-color: var(--hw-bg-secondary);
-  box-shadow: 0 0 0 1px var(--hw-border) inset;
+  background-color: var(--hw-bg-input) !important;
+  box-shadow: 0 0 0 1px var(--hw-border) inset !important;
 }
 
 :deep(.el-select .el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px var(--theme-color) inset;
+  box-shadow: 0 0 0 1px var(--theme-color) inset !important;
 }
 
 :deep(.el-select .el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px var(--theme-color) inset;
+  box-shadow: 0 0 0 1px var(--theme-color) inset !important;
 }
 
 :deep(.el-select .el-input__inner) {
-  color: var(--hw-text-primary);
-  background-color: transparent;
+  color: var(--hw-text-primary) !important;
+  background-color: transparent !important;
 }
 
 :deep(.el-select-dropdown) {

@@ -465,7 +465,7 @@ onMounted(async () => {
                 <p class="field-hint">介绍一下你的作品，编写一段故事，或是描述一下你的创作历程吧。</p>
               </div>
               <div class="form-row form-inline">
-                <label class="field-label">含敏感内容</label>
+                <label class="field-label">胖宝宝不宜</label>
                 <label class="toggle">
                   <input type="checkbox" v-model="explicit" />
                   <span class="toggle-slider"></span>

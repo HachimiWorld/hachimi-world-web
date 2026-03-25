@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Search, ArrowDown } from '@element-plus/icons-vue'
+import { Search, ArrowDown, Filter } from '@element-plus/icons-vue'
 import { ApiError } from '@/api/request'
 import {
   searchMusic,
@@ -11,6 +11,7 @@ import {
   type UserSearchItem,
   type PlaylistSearchItem,
   type MusicSortBy,
+  type PlaylistSortBy,
 } from '@/api/search'
 import SearchSongCard from '@/components/SearchSongCard.vue'
 import SearchUserCard from '@/components/SearchUserCard.vue'
@@ -25,12 +26,37 @@ type SearchTab = 'music' | 'user' | 'playlist'
 
 const currentTab = ref<SearchTab>('music')
 const musicSort = ref<MusicSortBy>('relevance')
-const currentPage = ref(1)
+const playlistSort = ref<PlaylistSortBy>('relevance')
 const loading = ref(false)
+const loadingMore = ref(false)
 const errorText = ref('')
 const processingTimeMs = ref<number | null>(null)
-const total = ref(0)
 const sortMenuOpen = ref(false)
+const filterPanelOpen = ref(false)
+
+const musicLoadedPages = ref(0)
+const userLoadedPages = ref(0)
+const playlistLoadedPages = ref(0)
+const musicHasMore = ref(false)
+const userHasMore = ref(false)
+const playlistHasMore = ref(false)
+
+// 音乐筛选条件
+const filterExplicit = ref<'all' | 'only' | 'exclude'>('all')
+const filterCreationType = ref<'' | '0' | '1' | '2'>('')
+
+// 组合为 MeiliSearch filter 字符串，无条件时为 undefined（不传参数）
+const musicFilter = computed(() => {
+  const parts: string[] = []
+  if (filterExplicit.value === 'only') parts.push('explicit = true')
+  if (filterExplicit.value === 'exclude') parts.push('explicit = false')
+  if (filterCreationType.value !== '') parts.push(`creation_type = ${filterCreationType.value}`)
+  return parts.length ? parts.join(' AND ') : undefined
+})
+
+const isFilterActive = computed(
+  () => filterExplicit.value !== 'all' || filterCreationType.value !== '',
+)
 
 const musicHits = ref<MusicSearchItem[]>([])
 const userHits = ref<UserSearchItem[]>([])
@@ -44,104 +70,176 @@ const tabOptions: { id: SearchTab; label: string }[] = [
   { id: 'playlist', label: '歌单' },
 ]
 
-const sortOptions: { id: MusicSortBy; label: string }[] = [
+const musicSortOptions: { id: MusicSortBy; label: string }[] = [
   { id: 'relevance', label: '最相关' },
-  { id: 'release_time_desc', label: '最新' },
-  { id: 'release_time_asc', label: '最早' },
+  { id: 'release_time_desc', label: '最新发布' },
+  { id: 'release_time_asc', label: '最早发布' },
+  { id: 'play_count_desc', label: '播放最多' },
+  { id: 'play_count_asc', label: '播放最少' },
 ]
 
-const activeSortLabel = computed(
-  () => sortOptions.find((item) => item.id === musicSort.value)?.label ?? '最相关',
-)
+const playlistSortOptions: { id: PlaylistSortBy; label: string }[] = [
+  { id: 'relevance', label: '最相关' },
+  { id: 'create_time_desc', label: '最新创建' },
+  { id: 'create_time_asc', label: '最早创建' },
+  { id: 'update_time_desc', label: '最近更新' },
+  { id: 'update_time_asc', label: '最早更新' },
+]
 
-async function loadResults() {
+const currentSortOptions = computed(() => {
+  if (currentTab.value === 'music') return musicSortOptions
+  if (currentTab.value === 'playlist') return playlistSortOptions
+  return []
+})
+
+const activeSortLabel = computed(() => {
+  if (currentTab.value === 'music')
+    return musicSortOptions.find((o) => o.id === musicSort.value)?.label ?? '最相关'
+  if (currentTab.value === 'playlist')
+    return playlistSortOptions.find((o) => o.id === playlistSort.value)?.label ?? '最相关'
+  return ''
+})
+
+async function loadResults(reset = true) {
   if (!keyword.value) {
     loading.value = false
+    loadingMore.value = false
     errorText.value = ''
-    total.value = 0
     processingTimeMs.value = null
     musicHits.value = []
     userHits.value = []
     playlistHits.value = []
+    musicLoadedPages.value = 0
+    userLoadedPages.value = 0
+    playlistLoadedPages.value = 0
+    musicHasMore.value = false
+    userHasMore.value = false
+    playlistHasMore.value = false
     return
   }
 
-  loading.value = true
-  errorText.value = ''
+  if (reset) {
+    loading.value = true
+    loadingMore.value = false
+    errorText.value = ''
+  } else {
+    loadingMore.value = true
+  }
 
   try {
     if (currentTab.value === 'music') {
+      const offset = reset ? 0 : musicHits.value.length
       const resp = await searchMusic({
         q: keyword.value,
         limit: PAGE_SIZE,
-        offset: (currentPage.value - 1) * PAGE_SIZE,
+        offset,
         sortBy: musicSort.value,
+        filter: musicFilter.value,
       })
-      musicHits.value = resp.hits
+      musicHits.value = reset ? resp.hits : [...musicHits.value, ...resp.hits]
+      musicLoadedPages.value = Math.ceil(musicHits.value.length / PAGE_SIZE)
+      musicHasMore.value = resp.hits.length === PAGE_SIZE
       processingTimeMs.value = resp.processing_time_ms
-      total.value = resp.total_hits ?? resp.hits.length
     } else if (currentTab.value === 'user') {
+      const page = reset ? 0 : userLoadedPages.value
       const resp = await searchUsers({
         q: keyword.value,
-        page: currentPage.value - 1,
+        page,
         size: PAGE_SIZE,
       })
-      userHits.value = resp.hits
+      userHits.value = reset ? resp.hits : [...userHits.value, ...resp.hits]
+      userLoadedPages.value = reset ? 1 : userLoadedPages.value + 1
+      userHasMore.value = resp.hits.length === PAGE_SIZE
       processingTimeMs.value = resp.processing_time_ms
-      total.value = resp.total_hits ?? resp.hits.length
     } else {
+      const offset = reset ? 0 : playlistHits.value.length
       const resp = await searchPlaylists({
         q: keyword.value,
         limit: PAGE_SIZE,
-        offset: (currentPage.value - 1) * PAGE_SIZE,
+        offset,
+        sortBy: playlistSort.value,
       })
-      playlistHits.value = resp.hits
+      playlistHits.value = reset ? resp.hits : [...playlistHits.value, ...resp.hits]
+      playlistLoadedPages.value = Math.ceil(playlistHits.value.length / PAGE_SIZE)
+      playlistHasMore.value = resp.hits.length === PAGE_SIZE
       processingTimeMs.value = resp.processing_time_ms
-      total.value = resp.total_hits ?? resp.hits.length
     }
   } catch (e) {
     errorText.value = e instanceof ApiError ? e.msg : '搜索失败，请稍后重试'
     processingTimeMs.value = null
-    total.value = 0
-    musicHits.value = []
-    userHits.value = []
-    playlistHits.value = []
+    if (reset) {
+      musicHits.value = []
+      userHits.value = []
+      playlistHits.value = []
+      musicLoadedPages.value = 0
+      userLoadedPages.value = 0
+      playlistLoadedPages.value = 0
+      musicHasMore.value = false
+      userHasMore.value = false
+      playlistHasMore.value = false
+    }
   } finally {
     loading.value = false
+    loadingMore.value = false
   }
+}
+
+const currentHasMore = computed(() => {
+  if (currentTab.value === 'music') return musicHasMore.value
+  if (currentTab.value === 'user') return userHasMore.value
+  return playlistHasMore.value
+})
+
+function loadMore() {
+  if (!currentHasMore.value || loading.value || loadingMore.value) return
+  loadResults(false)
 }
 
 function switchTab(tab: SearchTab) {
   if (currentTab.value === tab) return
   currentTab.value = tab
-  currentPage.value = 1
   sortMenuOpen.value = false
+  filterPanelOpen.value = false
 }
 
-function changeSort(sort: MusicSortBy) {
-  if (musicSort.value === sort) {
-    sortMenuOpen.value = false
-    return
+function changeSort(sort: string) {
+  if (currentTab.value === 'music') {
+    if (musicSort.value === sort) { sortMenuOpen.value = false; return }
+    musicSort.value = sort as MusicSortBy
+  } else if (currentTab.value === 'playlist') {
+    if (playlistSort.value === sort) { sortMenuOpen.value = false; return }
+    playlistSort.value = sort as PlaylistSortBy
   }
-  musicSort.value = sort
-  currentPage.value = 1
   sortMenuOpen.value = false
 }
 
 function toggleSortMenu() {
   sortMenuOpen.value = !sortMenuOpen.value
+  if (sortMenuOpen.value) filterPanelOpen.value = false
 }
 
-function handlePageChange(page: number) {
-  currentPage.value = page
+function toggleFilterPanel() {
+  filterPanelOpen.value = !filterPanelOpen.value
+  if (filterPanelOpen.value) sortMenuOpen.value = false
+}
+
+function applyFilter() {
+  filterPanelOpen.value = false
+  loadResults()
+}
+
+function resetFilter() {
+  filterExplicit.value = 'all'
+  filterCreationType.value = ''
+  filterPanelOpen.value = false
+  loadResults()
 }
 
 watch(keyword, () => {
-  currentPage.value = 1
   loadResults()
 })
 
-watch([currentTab, currentPage, musicSort], () => {
+watch([currentTab, musicSort, playlistSort], () => {
   loadResults()
 })
 
@@ -176,26 +274,95 @@ onMounted(() => {
             </button>
           </div>
 
-          <div v-if="currentTab === 'music'" class="sort-select">
-            <button
-              class="sort-trigger"
-              :class="{ open: sortMenuOpen }"
-              @click="toggleSortMenu"
-            >
-              <span>{{ activeSortLabel }}</span>
-              <el-icon class="sort-arrow" :class="{ open: sortMenuOpen }"><ArrowDown /></el-icon>
-            </button>
-
-            <div v-if="sortMenuOpen" class="sort-menu">
+          <div class="toolbar-right">
+            <!-- 排序下拉（音乐 & 歌单 tab 显示） -->
+            <div v-if="currentTab === 'music' || currentTab === 'playlist'" class="sort-select">
               <button
-                v-for="sort in sortOptions"
-                :key="sort.id"
-                class="sort-option"
-                :class="{ active: musicSort === sort.id }"
-                @click="changeSort(sort.id)"
+                class="sort-trigger"
+                :class="{ open: sortMenuOpen }"
+                @click="toggleSortMenu"
               >
-                {{ sort.label }}
+                <span>{{ activeSortLabel }}</span>
+                <el-icon class="sort-arrow" :class="{ open: sortMenuOpen }"><ArrowDown /></el-icon>
               </button>
+
+              <div v-if="sortMenuOpen" class="sort-menu">
+                <button
+                  v-for="sort in currentSortOptions"
+                  :key="sort.id"
+                  class="sort-option"
+                  :class="{ active: currentTab === 'music' ? musicSort === sort.id : playlistSort === sort.id }"
+                  @click="changeSort(sort.id)"
+                >
+                  {{ sort.label }}
+                </button>
+              </div>
+            </div>
+
+            <!-- 筛选按钮（仅音乐 tab） -->
+            <div v-if="currentTab === 'music'" class="filter-wrap">
+              <button
+                class="sort-trigger filter-trigger"
+                :class="{ open: filterPanelOpen, active: isFilterActive }"
+                @click="toggleFilterPanel"
+              >
+                <el-icon><Filter /></el-icon>
+                <span>筛选{{ isFilterActive ? ' ·' : '' }}</span>
+              </button>
+
+              <div v-if="filterPanelOpen" class="filter-panel">
+                <div class="filter-section">
+                  <p class="filter-label">内容分级</p>
+                  <div class="filter-chips">
+                    <button
+                      class="filter-chip"
+                      :class="{ active: filterExplicit === 'all' }"
+                      @click="filterExplicit = 'all'"
+                    >全部</button>
+                    <button
+                      class="filter-chip"
+                      :class="{ active: filterExplicit === 'exclude' }"
+                      @click="filterExplicit = 'exclude'"
+                    >排除胖宝宝不宜</button>
+                    <button
+                      class="filter-chip"
+                      :class="{ active: filterExplicit === 'only' }"
+                      @click="filterExplicit = 'only'"
+                    >仅胖宝宝不宜</button>
+                  </div>
+                </div>
+
+                <div class="filter-section">
+                  <p class="filter-label">创作类型</p>
+                  <div class="filter-chips">
+                    <button
+                      class="filter-chip"
+                      :class="{ active: filterCreationType === '' }"
+                      @click="filterCreationType = ''"
+                    >全部</button>
+                    <button
+                      class="filter-chip"
+                      :class="{ active: filterCreationType === '0' }"
+                      @click="filterCreationType = '0'"
+                    >原创</button>
+                    <button
+                      class="filter-chip"
+                      :class="{ active: filterCreationType === '1' }"
+                      @click="filterCreationType = '1'"
+                    >二次创作</button>
+                    <button
+                      class="filter-chip"
+                      :class="{ active: filterCreationType === '2' }"
+                      @click="filterCreationType = '2'"
+                    >三次创作</button>
+                  </div>
+                </div>
+
+                <div class="filter-actions">
+                  <button class="filter-reset" @click="resetFilter">重置</button>
+                  <button class="filter-apply" @click="applyFilter">应用</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -291,15 +458,10 @@ onMounted(() => {
           <span>没有找到相关结果</span>
         </div>
 
-        <div v-if="!loading && total > PAGE_SIZE" class="pagination-wrap">
-          <el-pagination
-            background
-            layout="prev, pager, next"
-            :current-page="currentPage"
-            :page-size="PAGE_SIZE"
-            :total="total"
-            @current-change="handlePageChange"
-          />
+        <div v-if="!loading && currentHasMore" class="load-more-wrap">
+          <button class="load-more-btn" :disabled="loadingMore" @click="loadMore">
+            {{ loadingMore ? '加载中…' : '加载更多' }}
+          </button>
         </div>
       </section>
     </div>
@@ -314,7 +476,7 @@ onMounted(() => {
 
 .search-shell {
   max-width: 1220px;
-  margin: 0 auto;
+  margin: 0 auto 27px;
 }
 
 .search-head {
@@ -394,7 +556,15 @@ onMounted(() => {
   color: #fff;
 }
 
-.sort-select {
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.sort-select,
+.filter-wrap {
   position: relative;
   flex-shrink: 0;
 }
@@ -426,6 +596,7 @@ onMounted(() => {
   flex-direction: column;
   gap: 8px;
   min-width: 132px;
+  max-width: min(320px, calc(100vw - 24px));
   padding: 10px;
   border-radius: 16px;
   border: 1px solid var(--hw-border);
@@ -433,8 +604,111 @@ onMounted(() => {
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.12);
 }
 
-.sort-option {
-  width: 100%;
+.sort-trigger.filter-trigger.active {
+  border-color: var(--theme-color);
+  color: var(--theme-color);
+  background: color-mix(in srgb, var(--theme-color) 10%, var(--hw-bg-secondary));
+}
+
+.filter-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 5;
+  min-width: 260px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--hw-border);
+  background: var(--hw-bg-primary);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--hw-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--hw-border);
+  background: var(--hw-bg-secondary);
+  color: var(--hw-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.filter-chip:hover {
+  border-color: var(--theme-color);
+  color: var(--theme-color);
+}
+
+.filter-chip.active {
+  background: var(--theme-color);
+  border-color: var(--theme-color);
+  color: #fff;
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--hw-border);
+}
+
+.filter-reset {
+  padding: 6px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--hw-border);
+  background: transparent;
+  color: var(--hw-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filter-reset:hover {
+  border-color: var(--hw-text-secondary);
+  color: var(--hw-text-primary);
+}
+
+.filter-apply {
+  padding: 6px 16px;
+  border-radius: 10px;
+  border: none;
+  background: var(--theme-color);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.filter-apply:hover {
+  background: color-mix(in srgb, var(--theme-color) 85%, #000);
 }
 
 .result-grid {
@@ -646,24 +920,33 @@ onMounted(() => {
   color: #ff7875;
 }
 
-.pagination-wrap {
+.load-more-wrap {
   margin-top: 24px;
   display: flex;
   justify-content: center;
 }
 
-:deep(.el-pagination.is-background .btn-next),
-:deep(.el-pagination.is-background .btn-prev),
-:deep(.el-pagination.is-background .el-pager li) {
-  background: var(--hw-bg-secondary);
-  border: 1px solid var(--hw-border);
-  color: var(--hw-text-secondary);
+.load-more-btn {
+  min-width: 144px;
+  padding: 11px 18px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--theme-color) 30%, var(--hw-border));
+  background: color-mix(in srgb, var(--theme-color) 8%, var(--hw-bg-secondary));
+  color: var(--hw-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
 }
 
-:deep(.el-pagination.is-background .el-pager li.is-active) {
-  background: var(--theme-color);
+.load-more-btn:hover:not(:disabled) {
   border-color: var(--theme-color);
-  color: #fff;
+  background: color-mix(in srgb, var(--theme-color) 14%, var(--hw-bg-secondary));
+}
+
+.load-more-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
 }
 
 @media (max-width: 1024px) {
@@ -692,8 +975,26 @@ onMounted(() => {
     width: 100%;
   }
 
-  .sort-select {
+  .toolbar-right {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .sort-select,
+  .filter-wrap {
     align-self: flex-start;
+  }
+
+  .sort-menu,
+  .filter-panel {
+    left: 0;
+    right: auto;
+    max-width: min(320px, calc(100vw - 24px));
+  }
+
+  .filter-panel {
+    min-width: min(260px, calc(100vw - 24px));
   }
 
   .result-grid {
