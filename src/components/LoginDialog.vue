@@ -297,7 +297,7 @@ async function handleReset() {
   <el-dialog
     :model-value="props.modelValue"
     @update:model-value="emit('update:modelValue', $event)"
-    :title="activeTab === 'login' ? '登录' : activeTab === 'register' ? '注册' : '重置密码'"
+    :title="activeTab === 'login' ? '登神长阶' : activeTab === 'register' ? '成为神人' : '重返天堂'"
     width="420px"
     class="login-dialog"
     modal-class="login-dialog-overlay"
@@ -336,7 +336,7 @@ async function handleReset() {
         <el-form-item label="邮箱">
           <el-input
             v-model="loginForm.email"
-            placeholder="your@email.com"
+            placeholder="shenren@email.com"
             type="email"
             autocomplete="email"
             clearable
@@ -399,7 +399,7 @@ async function handleReset() {
         <el-form-item label="邮箱">
           <el-input
             v-model="registerForm.email"
-            placeholder="your@email.com"
+            placeholder="shenren@email.com"
             type="email"
             autocomplete="email"
             clearable
@@ -487,7 +487,7 @@ async function handleReset() {
         <el-form-item label="邮箱">
           <el-input
             v-model="resetForm.email"
-            placeholder="your@email.com"
+            placeholder="shenren@email.com"
             type="email"
             autocomplete="email"
             clearable

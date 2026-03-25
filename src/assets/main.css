@@ -301,3 +301,50 @@ button {
   color: var(--hw-text-primary) !important;
   box-shadow: 0 0 0 1px var(--hw-border) inset !important;
 }
+
+/* ===== El-Select 主题色 & 深色模式全局覆盖 ===== */
+/* input 触发器 */
+.el-select .el-input__wrapper {
+  background-color: var(--hw-bg-input) !important;
+  box-shadow: 0 0 0 1px var(--hw-border) inset !important;
+}
+
+.el-select .el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--theme-color) inset !important;
+}
+
+.el-select .el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px var(--theme-color) inset !important;
+}
+
+.el-select .el-input__inner {
+  color: var(--hw-text-primary) !important;
+  background-color: transparent !important;
+}
+
+/* 下拉弹出层（teleport 到 body） */
+.el-select__popper.el-popper {
+  background: var(--hw-bg-secondary) !important;
+  border-color: var(--hw-border) !important;
+}
+
+.el-select__popper .el-select-dropdown__item {
+  color: var(--hw-text-primary) !important;
+}
+
+.el-select__popper .el-select-dropdown__item:hover,
+.el-select__popper .el-select-dropdown__item.is-hovering {
+  background-color: var(--hw-bg-hover) !important;
+}
+
+.el-select__popper .el-select-dropdown__item.is-selected,
+.el-select__popper .el-select-dropdown__item.selected {
+  color: var(--theme-color) !important;
+  font-weight: 600;
+}
+
+/* 弹出层箭头 */
+.el-select__popper .el-popper__arrow::before {
+  background: var(--hw-bg-secondary) !important;
+  border-color: var(--hw-border) !important;
+}

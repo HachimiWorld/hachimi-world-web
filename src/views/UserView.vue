@@ -296,10 +296,10 @@ onMounted(() => {
                   <!-- 性别行 -->
                   <template v-if="editingField === 'gender'">
                     <div class="inline-edit-row" style="margin-top:6px">
-                      <el-select v-model="editValue" size="small" style="width:110px">
+                      <el-select v-model="editValue" size="small" style="width:120px" placeholder="选择性别">
                         <el-option label="神没有性别" value="" />
-                        <el-option label="男人" value="0" />
-                        <el-option label="女人" value="1" />
+                        <el-option label="非女人" value="0" />
+                        <el-option label="非男人" value="1" />
                       </el-select>
                       <button class="inline-edit-btn confirm" :disabled="editLoading" @click="submitEdit"><el-icon><Check /></el-icon></button>
                       <button class="inline-edit-btn cancel" @click="cancelEdit"><el-icon><Close /></el-icon></button>
@@ -772,6 +772,51 @@ onMounted(() => {
   justify-content: center;
 }
 
+:deep(.el-select) {
+  --el-color-primary: var(--theme-color);
+  --el-color-primary-light-3: color-mix(in srgb, var(--theme-color) 70%, white);
+  --el-color-primary-light-5: color-mix(in srgb, var(--theme-color) 50%, white);
+  --el-color-primary-light-7: color-mix(in srgb, var(--theme-color) 30%, white);
+  --el-color-primary-light-8: color-mix(in srgb, var(--theme-color) 20%, white);
+  --el-color-primary-light-9: color-mix(in srgb, var(--theme-color) 10%, white);
+}
+
+:deep(.el-select .el-input__wrapper) {
+  background-color: var(--hw-bg-secondary);
+  box-shadow: 0 0 0 1px var(--hw-border) inset;
+}
+
+:deep(.el-select .el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px var(--theme-color) inset;
+}
+
+:deep(.el-select .el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px var(--theme-color) inset;
+}
+
+:deep(.el-select .el-input__inner) {
+  color: var(--hw-text-primary);
+  background-color: transparent;
+}
+
+:deep(.el-select-dropdown) {
+  --el-color-primary: var(--theme-color);
+  background-color: var(--hw-bg-secondary);
+  border-color: var(--hw-border);
+}
+
+:deep(.el-select-dropdown__item) {
+  color: var(--hw-text-primary);
+}
+
+:deep(.el-select-dropdown__item.is-hovering) {
+  background-color: var(--hw-bg-hover);
+}
+
+:deep(.el-select-dropdown__item.is-selected) {
+  color: var(--theme-color);
+  font-weight: 600;
+}
 :deep(.el-pagination.is-background .btn-next),
 :deep(.el-pagination.is-background .btn-prev),
 :deep(.el-pagination.is-background .el-pager li) {

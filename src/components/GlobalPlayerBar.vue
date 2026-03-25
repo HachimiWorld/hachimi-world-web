@@ -907,9 +907,12 @@ async function handleCreateCloudPlaylist() {
 }
 
 .mode-item:hover,
-.queue-item:hover,
 .create-cloud-trigger:hover {
   background: color-mix(in srgb, var(--hw-bg-hover) 75%, #000 25%);
+}
+
+.queue-item:hover {
+  background: var(--hw-bg-hover);
 }
 
 .submit-create-btn:hover {
