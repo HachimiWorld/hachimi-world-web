@@ -1,15 +1,19 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { useThemeStore } from '@/stores/theme'
 import MobileSidebar from './MobileSidebar.vue'
 import LoginDialog from './LoginDialog.vue'
 import { Search, UserFilled } from '@element-plus/icons-vue'
-import logoUrl from '@/assets/logo.png'
+import lightLogoUrl from '@/assets/logo-light.svg'
+import darkLogoUrl from '@/assets/logo-dark.svg'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const themeStore = useThemeStore()
+const currentLogoUrl = computed(() => (themeStore.isDark ? darkLogoUrl : lightLogoUrl))
 
 const sidebarOpen = ref(false)
 const loginDialogOpen = ref(false)
@@ -60,14 +64,7 @@ function handleAvatarClick() {
     <div class="header-inner">
       <!-- PC端 Logo -->
       <div class="header-logo pc-only">
-        <span
-          class="logo-img"
-          :style="{
-            webkitMaskImage: `url(${logoUrl})`,
-            maskImage: `url(${logoUrl})`,
-          }"
-        ></span>
-        <span class="logo-text">基米天堂</span>
+        <img :src="currentLogoUrl" alt="基米天堂" class="header-logo-image">
       </div>
 
       <!-- 手机端汉堡菜单按钮 -->
@@ -189,34 +186,14 @@ function handleAvatarClick() {
   align-self: stretch;
 }
 
-.logo-img {
-  display: inline-block;
-  height: 22px;
-  width: 22px;
-  flex-shrink: 0;
-  margin-right: 6px;
-  -webkit-mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-size: contain;
-  mask-repeat: no-repeat;
-  mask-position: center;
-  background-color: var(--theme-color);
-}
-
-.logo-text {
-  display: inline-flex;
-  align-items: center;
-  height: 100%;
-  font-size: 19px;
-  font-weight: 700;
-  color: var(--theme-color);
-  letter-spacing: -0.3px;
-  font-family: 'Trebuchet MS', 'Segoe UI Rounded', 'Arial Rounded MT Bold', 'Microsoft YaHei', sans-serif;
-  white-space: nowrap;
-  cursor: default;
+.header-logo-image {
+  display: block;
+  height: 42px;
+  width: auto;
+  max-width: 260px;
+  object-fit: contain;
   user-select: none;
-  line-height: 1;
+  -webkit-user-drag: none;
 }
 
 /* PC 导航 */

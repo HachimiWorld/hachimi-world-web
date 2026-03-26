@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import logoUrl from '@/assets/logo.png'
+import { useThemeStore } from '@/stores/theme'
+import lightLogoUrl from '@/assets/logo-light.svg'
+import darkLogoUrl from '@/assets/logo-dark.svg'
 
 const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{
@@ -9,6 +12,8 @@ const emit = defineEmits<{
 
 const router = useRouter()
 const route = useRoute()
+const themeStore = useThemeStore()
+const currentLogoUrl = computed(() => (themeStore.isDark ? darkLogoUrl : lightLogoUrl))
 
 const navItems = [
   { label: '首页', path: '/', icon: 'House' },
@@ -42,14 +47,7 @@ function isActive(path: string) {
   >
     <div class="sidebar-content">
       <div class="sidebar-logo">
-        <span
-          class="sidebar-logo-img"
-          :style="{
-            webkitMaskImage: `url(${logoUrl})`,
-            maskImage: `url(${logoUrl})`,
-          }"
-        ></span>
-        <span>基米天堂</span>
+        <img :src="currentLogoUrl" alt="基米天堂" class="sidebar-logo-image">
       </div>
       <nav class="sidebar-nav">
         <button
@@ -78,31 +76,19 @@ function isActive(path: string) {
 
 .sidebar-logo {
   padding: 20px 20px 16px;
-  font-size: 19px;
-  font-weight: 700;
-  color: var(--theme-color);
-  letter-spacing: -0.3px;
   border-bottom: 1px solid var(--hw-border);
-  font-family: 'Trebuchet MS', 'Segoe UI Rounded', 'Arial Rounded MT Bold', 'Microsoft YaHei', sans-serif;
-  user-select: none;
-  line-height: 1;
   display: flex;
   align-items: center;
-  gap: 6px;
 }
 
-.sidebar-logo-img {
-  display: inline-block;
-  width: 22px;
-  height: 22px;
-  flex-shrink: 0;
-  -webkit-mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-size: contain;
-  mask-repeat: no-repeat;
-  mask-position: center;
-  background-color: var(--theme-color);
+.sidebar-logo-image {
+  display: block;
+  width: auto;
+  height: 40px;
+  max-width: 210px;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .sidebar-nav {

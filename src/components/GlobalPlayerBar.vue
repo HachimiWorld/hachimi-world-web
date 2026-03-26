@@ -436,7 +436,7 @@ async function handleCreateCloudPlaylist() {
               @click.stop="playerStore.removeLocalSong(index)"
             >
               <el-icon><Delete /></el-icon>
-            </button>
+          </button>
           </div>
         </div>
         <div v-else class="queue-empty">这个歌单暂时没有歌曲。</div>
