@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Search, ArrowDown, Filter } from '@element-plus/icons-vue'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
+import {
+  mdiChevronDown,
+  mdiFilterCogOutline,
+  mdiMagnify,
+} from '@mdi/js'
 import { ApiError } from '@/api/request'
 import {
   searchMusic,
@@ -283,7 +288,7 @@ onMounted(() => {
                 @click="toggleSortMenu"
               >
                 <span>{{ activeSortLabel }}</span>
-                <el-icon class="sort-arrow" :class="{ open: sortMenuOpen }"><ArrowDown /></el-icon>
+                <MdiIcon class="sort-arrow" :class="{ open: sortMenuOpen }" :path="mdiChevronDown" size="18px" />
               </button>
 
               <div v-if="sortMenuOpen" class="sort-menu">
@@ -306,7 +311,7 @@ onMounted(() => {
                 :class="{ open: filterPanelOpen, active: isFilterActive }"
                 @click="toggleFilterPanel"
               >
-                <el-icon><Filter /></el-icon>
+                <MdiIcon :path="mdiFilterCogOutline" size="18px" />
                 <span>筛选{{ isFilterActive ? ' ·' : '' }}</span>
               </button>
 
@@ -454,7 +459,7 @@ onMounted(() => {
         </div>
 
         <div v-else class="state-card empty-state">
-          <el-icon><Search /></el-icon>
+          <MdiIcon :path="mdiMagnify" size="18px" />
           <span>没有找到相关结果</span>
         </div>
 

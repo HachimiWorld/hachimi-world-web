@@ -1,8 +1,28 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { CaretRight, Edit, Delete, Star, StarFilled, User, Headset, Warning, Upload } from '@element-plus/icons-vue'
+import { useRoute, useRouter } from 'vue-router'
+import {
+  mdiAccount,
+  mdiAlertCircleOutline,
+  mdiDeleteOutline,
+  mdiHeartOutline,
+  mdiInformationOutline,
+  mdiMenu,
+  mdiPencil,
+  mdiPlay,
+  mdiPlaylistMusic,
+  mdiPoll,
+  mdiRepeat,
+  mdiShuffle,
+  mdiSkipNext,
+  mdiSkipPrevious,
+  mdiVolumeHigh,
+  mdiFormatListBulleted,
+  mdiClockOutline,
+  mdiUpload,
+} from '@mdi/js'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
 import { ApiError } from '@/api/request'
 import {
   getPlaylistDetail, updatePlaylist, deletePlaylist, removeSongFromPlaylist,
@@ -83,7 +103,9 @@ onMounted(loadDetail)
 watch(playlistId, loadDetail)
 
 async function playSong(song: PlaylistSongItem) {
-  await playerStore.addSongToLocalAndPlay(song.song_id)
+  const localTarget = playerStore.availableTargets.find((item) => item.type === 'local')
+  if (!localTarget) return
+  await playerStore.addSongToTargetAndPlay(song.song_id, localTarget)
 }
 
 async function playAll() {
@@ -248,7 +270,7 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
 
     <!-- 错误 -->
     <section v-else-if="pageError" class="pd-state-card">
-      <el-icon class="pd-state-icon"><Warning /></el-icon>
+      <MdiIcon class="pd-state-icon" :path="mdiAlertCircleOutline" size="24px" />
       <span>{{ pageError }}</span>
     </section>
 
@@ -259,10 +281,10 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
         <div class="pd-cover-wrap">
           <div class="pd-cover-box">
             <img v-if="coverUrl" :src="coverUrl" :alt="detail.playlist_info.name" class="pd-cover-img" />
-            <div v-else class="pd-cover-fallback"><el-icon><Headset /></el-icon></div>
+            <div v-else class="pd-cover-fallback"><MdiIcon :path="mdiAccount" size="30px" /></div>
           </div>
           <button v-if="isOwner" class="pd-cover-upload-btn" :class="{ uploading: coverUploading }" @click="triggerCoverUpload">
-            <el-icon><Upload /></el-icon>
+            <MdiIcon :path="mdiUpload" size="18px" />
             <span>{{ coverUploading ? '上传中…' : '更换封面' }}</span>
           </button>
           <input ref="coverInputRef" type="file" accept="image/*" style="display:none" @change="onCoverSelected" />
@@ -278,7 +300,7 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
           <button class="pd-creator-link" @click="goToUser(detail.creator_profile.uid)">
             <div class="pd-creator-avatar">
               <img v-if="detail.creator_profile.avatar_url" :src="detail.creator_profile.avatar_url" />
-              <el-icon v-else><User /></el-icon>
+              <MdiIcon v-else :path="mdiAccount" size="18px" />
             </div>
             <span>{{ detail.creator_profile.username }}</span>
           </button>
@@ -292,21 +314,21 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
           <div class="pd-actions">
             <template v-if="isOwner">
               <button class="pd-btn primary" :disabled="!detail.songs.length" @click="playAll">
-                <el-icon><CaretRight /></el-icon>播放全部
+                <MdiIcon :path="mdiPlay" size="18px" />播放全部
               </button>
               <button class="pd-btn" @click="openEditDialog">
-                <el-icon><Edit /></el-icon>编辑信息
+                <MdiIcon :path="mdiPencil" size="18px" />编辑信息
               </button>
               <button class="pd-btn danger" @click="handleDeletePlaylist">
-                <el-icon><Delete /></el-icon>删除歌单
+                <MdiIcon :path="mdiDeleteOutline" size="18px" />删除歌单
               </button>
             </template>
             <template v-else>
               <button class="pd-btn primary" :disabled="!detail.songs.length" @click="playAll">
-                <el-icon><CaretRight /></el-icon>播放全部
+                <MdiIcon :path="mdiPlay" size="18px" />播放全部
               </button>
               <button class="pd-btn" :class="{ favorited: isFavorited }" :disabled="favoriteLoading" @click="toggleFavorite">
-                <el-icon><component :is="isFavorited ? StarFilled : Star" /></el-icon>
+                <MdiIcon :path="mdiHeartOutline" size="18px" />
                 {{ isFavorited ? '已收藏' : '收藏歌单' }}
               </button>
             </template>
@@ -322,7 +344,7 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
             <div class="pd-song-cover" @click="goToSong(song)">
               <img :src="song.cover_url" :alt="song.title" />
               <button class="pd-song-play-overlay" @click.stop="playSong(song)">
-                <el-icon><CaretRight /></el-icon>
+                <MdiIcon :path="mdiPlay" size="18px" />
               </button>
             </div>
             <div class="pd-song-info" @click="goToSong(song)">
@@ -331,12 +353,12 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
             </div>
             <span class="pd-song-duration">{{ formatDuration(song.duration_seconds) }}</span>
             <button v-if="isOwner" class="pd-song-remove-btn" :disabled="removingSongId === song.song_id" @click="handleRemoveSong(song)">
-              <el-icon><Delete /></el-icon>
+              <MdiIcon :path="mdiDeleteOutline" size="18px" />
             </button>
           </div>
         </div>
         <div v-else class="pd-empty">
-          <el-icon><Tickets /></el-icon>
+          <MdiIcon :path="mdiPlaylistMusic" size="28px" />
           <span>这个歌单还没有歌曲</span>
         </div>
       </section>

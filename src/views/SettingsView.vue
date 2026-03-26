@@ -4,7 +4,17 @@ import { useThemeStore } from '@/stores/theme'
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/user'
 import { ElMessageBox, ElMessage } from 'element-plus'
-import { Moon, Sunny } from '@element-plus/icons-vue'
+import {
+  mdiAccount,
+  mdiInformationOutline,
+  mdiLaptop,
+  mdiLogout,
+  mdiMoonWaningCrescent,
+  mdiPaletteOutline,
+  mdiRestore,
+  mdiWeatherSunny,
+} from '@mdi/js'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
 import LoginDialog from '@/components/LoginDialog.vue'
 import { http } from '@/api/request'
 
@@ -111,7 +121,7 @@ onMounted(async () => {
       <!-- 外观 -->
       <div class="settings-group">
         <div class="group-label">
-          <el-icon class="group-icon"><Brush /></el-icon>
+          <MdiIcon class="group-icon" :path="mdiPaletteOutline" size="18px" />
           外观
         </div>
 
@@ -123,12 +133,17 @@ onMounted(async () => {
           </div>
           <el-switch
             v-model="isDark"
-            :active-icon="Moon"
-            :inactive-icon="Sunny"
             size="large"
             class="dark-switch"
             style="--el-switch-on-color: var(--theme-color); --el-switch-off-color: var(--hw-border); --el-switch-on-text-color: var(--theme-color); --el-switch-off-text-color: var(--theme-color)"
-          />
+          >
+            <template #active-action>
+              <MdiIcon :path="mdiMoonWaningCrescent" size="14px" />
+            </template>
+            <template #inactive-action>
+              <MdiIcon :path="mdiWeatherSunny" size="14px" />
+            </template>
+          </el-switch>
         </div>
 
         <div class="row-divider" />
@@ -174,7 +189,7 @@ onMounted(async () => {
                 class="reset-btn"
                 @click="resetColor"
               >
-                <el-icon><RefreshLeft /></el-icon>
+                <MdiIcon :path="mdiRestore" size="16px" />
                 恢复默认
               </el-button>
             </div>
@@ -200,7 +215,7 @@ onMounted(async () => {
       <!-- 账号 -->
       <div class="settings-group">
         <div class="group-label">
-          <el-icon class="group-icon"><User /></el-icon>
+          <MdiIcon class="group-icon" :path="mdiAccount" size="18px" />
           账号
         </div>
 
@@ -212,7 +227,7 @@ onMounted(async () => {
               <span class="setting-desc">{{ userStore.userInfo?.username ?? '—' }}</span>
             </div>
             <div class="user-badge">
-              <el-icon><UserFilled /></el-icon>
+              <MdiIcon :path="mdiAccount" size="18px" />
             </div>
           </div>
 
@@ -224,7 +239,7 @@ onMounted(async () => {
               <span class="setting-desc">{{ deviceName }}</span>
             </div>
             <div class="device-tag">
-              <el-icon><Monitor /></el-icon>
+              <MdiIcon :path="mdiLaptop" size="18px" />
             </div>
           </div>
 
@@ -242,7 +257,7 @@ onMounted(async () => {
               class="logout-btn"
               @click="handleLogout"
             >
-              <el-icon><SwitchButton /></el-icon>
+              <MdiIcon :path="mdiLogout" size="18px" />
               退出
             </el-button>
           </div>
@@ -270,7 +285,7 @@ onMounted(async () => {
       <!-- 关于 -->
       <div class="settings-group">
         <div class="group-label">
-          <el-icon class="group-icon"><InfoFilled /></el-icon>
+          <MdiIcon class="group-icon" :path="mdiInformationOutline" size="18px" />
           关于
         </div>
         <div class="setting-row">

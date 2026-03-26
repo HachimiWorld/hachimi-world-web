@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { CaretRight, Delete, InfoFilled } from '@element-plus/icons-vue'
+import { mdiDeleteOutline, mdiInformationOutline, mdiPlay } from '@mdi/js'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
 import type { PlayHistoryItem } from '@/api/history'
 import { usePlayerStore } from '@/stores/player'
 
@@ -59,13 +60,13 @@ function goDetail() {
 
     <div class="hc-actions">
       <button class="hc-btn hc-play" title="播放" @click="handlePlay">
-        <el-icon><CaretRight /></el-icon>
+        <MdiIcon :path="mdiPlay" size="17px" />
       </button>
       <button class="hc-btn hc-detail" title="查看详情" @click="goDetail">
-        <el-icon><InfoFilled /></el-icon>
+        <MdiIcon :path="mdiInformationOutline" size="17px" />
       </button>
       <button class="hc-btn hc-delete" title="删除记录" @click="emit('delete', item.id)">
-        <el-icon><Delete /></el-icon>
+        <MdiIcon :path="mdiDeleteOutline" size="17px" />
       </button>
     </div>
   </div>

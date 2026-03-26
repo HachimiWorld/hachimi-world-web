@@ -65,8 +65,10 @@ async function onAudioChange(e: Event) {
     const resp = await uploadAudioFile(file)
     audioUploadResp.value = resp
     if (resp.title && !title.value) title.value = resp.title
-    if (resp.artist && crew.value.length === 1 && !crew.value[0].name)
-      crew.value[0].name = resp.artist
+    const firstCrew = crew.value[0]
+    if (resp.artist && crew.value.length === 1 && firstCrew && !firstCrew.name) {
+      firstCrew.name = resp.artist
+    }
     ElMessage.success('音频上传成功')
   } catch (e) {
     ElMessage.error(e instanceof ApiError ? e.msg : '音频上传失败')
@@ -118,6 +120,12 @@ const PLATFORMS = ['bilibili', 'youtube', 'netease', 'qq_music', 'spotify', 'sou
 const links = ref<LinkItem[]>([])
 function addLink() { links.value.push({ platform: 'bilibili', url: '' }) }
 function removeLink(i: number) { links.value.splice(i, 1) }
+
+function handleTagBlur() {
+  window.setTimeout(() => {
+    tagDropdown.value = false
+  }, 200)
+}
 
 const allTags = ref<{ id: number; name: string }[]>([])
 const tagQuery = ref('')
@@ -535,7 +543,7 @@ onMounted(async () => {
                   @input="onTagInput"
                   @focus="onTagInput"
                   @keydown.enter.prevent="onTagEnter"
-                  @blur="setTimeout(() => { tagDropdown = false }, 200)"
+                  @blur="handleTagBlur"
                 />
                 <div v-if="tagDropdown" class="tag-dropdown">
                   <div v-if="tagSearching" class="tag-option tag-hint">搜索中…</div>

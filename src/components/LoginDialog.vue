@@ -1,10 +1,17 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import {
+  mdiAlertCircleOutline,
+  mdiCheckCircleOutline,
+  mdiLoading,
+  mdiShieldOutline,
+} from '@mdi/js'
 import { ApiError } from '@/api/request'
 import * as authApi from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 import { getUserProfile } from '@/api/song'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
 
 const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{
@@ -326,7 +333,7 @@ async function handleReset() {
 
     <!-- 错误提示 -->
     <div v-if="errorMsg" class="error-bar">
-      <el-icon><Warning /></el-icon>
+      <MdiIcon :path="mdiAlertCircleOutline" size="18px" />
       <span>{{ errorMsg }}</span>
     </div>
 
@@ -358,8 +365,8 @@ async function handleReset() {
           <div class="captcha-wrap">
             <div class="captcha-row">
               <div class="captcha-status" :class="{ verified: captchaVerified }">
-                <el-icon v-if="captchaVerified"><CircleCheck /></el-icon>
-                <el-icon v-else><Shield /></el-icon>
+                <MdiIcon v-if="captchaVerified" :path="mdiCheckCircleOutline" size="18px" />
+                <MdiIcon v-else :path="mdiShieldOutline" size="18px" />
                 <span>{{ captchaVerified ? '验证已通过' : '请完成人机验证' }}</span>
               </div>
               <el-button
@@ -447,8 +454,8 @@ async function handleReset() {
           <div class="captcha-wrap">
             <div class="captcha-row">
               <div class="captcha-status" :class="{ verified: captchaVerified }">
-                <el-icon v-if="captchaVerified"><CircleCheck /></el-icon>
-                <el-icon v-else><Shield /></el-icon>
+                <MdiIcon v-if="captchaVerified" :path="mdiCheckCircleOutline" size="18px" />
+                <MdiIcon v-else :path="mdiShieldOutline" size="18px" />
                 <span>{{ captchaVerified ? '验证已通过' : '请完成人机验证' }}</span>
               </div>
               <el-button
@@ -535,8 +542,8 @@ async function handleReset() {
           <div class="captcha-wrap">
             <div class="captcha-row">
               <div class="captcha-status" :class="{ verified: captchaVerified }">
-                <el-icon v-if="captchaVerified"><CircleCheck /></el-icon>
-                <el-icon v-else><Shield /></el-icon>
+                <MdiIcon v-if="captchaVerified" :path="mdiCheckCircleOutline" size="18px" />
+                <MdiIcon v-else :path="mdiShieldOutline" size="18px" />
                 <span>{{ captchaVerified ? '验证已通过' : '请完成人机验证' }}</span>
               </div>
               <el-button

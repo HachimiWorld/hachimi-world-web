@@ -694,6 +694,7 @@ export const usePlayerStore = defineStore('player', () => {
     if (fromIndex < 0 || toIndex < 0 || fromIndex >= queue.value.length || toIndex >= queue.value.length) return
     const newQueue = [...queue.value]
     const [moved] = newQueue.splice(fromIndex, 1)
+    if (!moved) return
     newQueue.splice(toIndex, 0, moved)
     const wasCurrentIndex = currentIndex.value
     queue.value = newQueue
@@ -801,6 +802,7 @@ export const usePlayerStore = defineStore('player', () => {
     setVolume,
     toggleQueuePanel,
     closePanels,
+    addSongToLocalAndPlay,
     addSongToTargetAndPlay,
     addSongToCloudPlaylist,
     replaceLocalQueueAndPlay,

@@ -2,23 +2,25 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
-  DArrowLeft,
-  DArrowRight,
-  CaretRight,
-  Tickets,
-  Sort,
-  RefreshRight,
-  Headset,
-  Histogram,
-  Microphone,
-  Files,
-  FolderAdd,
-  Plus,
-  Lock,
-  Link,
-  Delete,
-  InfoFilled,
-} from '@element-plus/icons-vue'
+  mdiDrag,
+  mdiEyeOffOutline,
+  mdiEyeOutline,
+  mdiFormatListBulleted,
+  mdiInformationOutline,
+  mdiPause,
+  mdiPlay,
+  mdiPlaylistMusic,
+  mdiPlus,
+  mdiPoll,
+  mdiRepeat,
+  mdiShuffle,
+  mdiSkipNext,
+  mdiSkipPrevious,
+  mdiVolumeHigh,
+  mdiDeleteOutline,
+  mdiPlaylistPlay,
+} from '@mdi/js'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
 import { createPlaylist } from '@/api/playlist'
 import { usePlayerStore } from '@/stores/player'
 import { useUserStore } from '@/stores/user'
@@ -71,10 +73,10 @@ function onDragEnd() {
   dragOverIndex.value = null
 }
 
-const modeOptions: { id: PlayerPlayMode; label: string; icon: unknown }[] = [
-  { id: 'sequence', label: '顺序播放', icon: Headset },
-  { id: 'loop', label: '循环播放', icon: RefreshRight },
-  { id: 'shuffle', label: '随机播放', icon: Sort },
+const modeOptions: { id: PlayerPlayMode; label: string; icon: string }[] = [
+  { id: 'sequence', label: '顺序播放', icon: mdiPlaylistPlay },
+  { id: 'loop', label: '循环播放', icon: mdiRepeat },
+  { id: 'shuffle', label: '随机播放', icon: mdiShuffle },
 ]
 
 function formatDuration(secs?: number | null) {
@@ -96,9 +98,9 @@ const volumeValue = computed({
 })
 
 const modeIcon = computed(() => {
-  if (playerStore.playMode === 'loop') return RefreshRight
-  if (playerStore.playMode === 'shuffle') return Sort
-  return Headset
+  if (playerStore.playMode === 'loop') return mdiRepeat
+  if (playerStore.playMode === 'shuffle') return mdiShuffle
+  return mdiPlaylistPlay
 })
 
 watch(
@@ -242,7 +244,7 @@ async function handleCreateCloudPlaylist() {
             </div>
 
             <div class="volume-readout">
-              <el-icon><Microphone /></el-icon>
+            <MdiIcon :path="mdiVolumeHigh" size="16px" />
               <span>{{ volumeValue }}%</span>
             </div>
           </div>
@@ -257,35 +259,32 @@ async function handleCreateCloudPlaylist() {
             :title="playerStore.currentSong ? '查看歌曲详情' : ''"
             @click="playerStore.currentSong && router.push('/song/' + playerStore.currentSong.songId)"
           >
-            <el-icon><InfoFilled /></el-icon>
+            <MdiIcon :path="mdiInformationOutline" size="18px" />
           </button>
           <button class="icon-tool-btn" @click="toggleVolumePanel">
-            <el-icon><Microphone /></el-icon>
+            <MdiIcon :path="mdiVolumeHigh" size="18px" />
           </button>
           <button class="icon-tool-btn" @click="togglePlaylistPanel">
-            <el-icon><Files /></el-icon>
+            <MdiIcon :path="mdiPlaylistMusic" size="18px" />
           </button>
           <button class="icon-tool-btn" @click="toggleModePanel">
-            <el-icon><component :is="modeIcon" /></el-icon>
+            <MdiIcon :path="modeIcon" size="18px" />
           </button>
           <button class="icon-tool-btn" @click="toggleQueuePanel">
-            <el-icon><Tickets /></el-icon>
+            <MdiIcon :path="mdiFormatListBulleted" size="18px" />
           </button>
         </div>
 
         <div class="button-group">
           <button class="player-btn ghost-btn" :disabled="!playerStore.hasQueue" @click="playerStore.previous">
-            <el-icon><DArrowLeft /></el-icon>
+            <MdiIcon :path="mdiSkipPrevious" size="22px" />
           </button>
           <button class="player-btn play-btn" :disabled="!playerStore.hasQueue" @click="playerStore.togglePlay">
-            <span v-if="playerStore.isPlaying" class="pause-bars" aria-hidden="true">
-              <span></span>
-              <span></span>
-            </span>
-            <el-icon v-else class="play-icon"><CaretRight /></el-icon>
+            <MdiIcon v-if="playerStore.isPlaying" :path="mdiPause" class="play-icon" size="22px" />
+            <MdiIcon v-else :path="mdiPlay" class="play-icon" size="22px" />
           </button>
           <button class="player-btn ghost-btn" :disabled="!playerStore.hasQueue" @click="playerStore.next">
-            <el-icon><DArrowRight /></el-icon>
+            <MdiIcon :path="mdiSkipNext" size="22px" />
           </button>
         </div>
       </div>
@@ -298,7 +297,7 @@ async function handleCreateCloudPlaylist() {
           <span class="queue-subtitle">调整当前播放器音量</span>
         </div>
         <div class="volume-edit-row">
-          <el-icon class="volume-panel-icon"><Microphone /></el-icon>
+            <MdiIcon :path="mdiVolumeHigh" class="volume-panel-icon" size="18px" />
           <el-slider v-model="volumeValue" class="volume-slider" :max="100" :show-tooltip="false" />
           <span class="volume-value">{{ volumeValue }}%</span>
         </div>
@@ -319,9 +318,9 @@ async function handleCreateCloudPlaylist() {
             :class="{ active: playerStore.targetKey === playerStore.LOCAL_TARGET_KEY }"
             @click="switchPlaylist(playerStore.LOCAL_TARGET_KEY)"
           >
-            <el-icon><Files /></el-icon>
+            <MdiIcon :path="mdiPlaylistMusic" size="17px" />
             <span>本地歌单</span>
-            <el-icon v-if="playerStore.targetKey === playerStore.LOCAL_TARGET_KEY" class="active-mark"><Histogram /></el-icon>
+            <MdiIcon v-if="playerStore.targetKey === playerStore.LOCAL_TARGET_KEY" :path="mdiPoll" class="active-mark" size="18px" />
           </button>
         </div>
 
@@ -334,9 +333,9 @@ async function handleCreateCloudPlaylist() {
             :class="{ active: playerStore.targetKey === `cloud:${playlist.id}` }"
             @click="switchPlaylist(`cloud:${playlist.id}`)"
           >
-            <el-icon><Tickets /></el-icon>
+            <MdiIcon :path="mdiPlaylistMusic" size="17px" />
             <span>{{ playlist.name }}</span>
-            <el-icon v-if="playerStore.targetKey === `cloud:${playlist.id}`" class="active-mark"><Histogram /></el-icon>
+            <MdiIcon v-if="playerStore.targetKey === `cloud:${playlist.id}`" :path="mdiPoll" class="active-mark" size="18px" />
           </button>
         </div>
         <div v-else class="queue-empty cloud-empty">
@@ -344,7 +343,7 @@ async function handleCreateCloudPlaylist() {
         </div>
 
         <button class="create-cloud-trigger" @click="toggleCreateCloud">
-          <el-icon><FolderAdd /></el-icon>
+          <MdiIcon :path="mdiPlus" size="18px" />
           {{ createCloudOpen ? '收起新建云端歌单' : '新建云端歌单' }}
         </button>
 
@@ -361,13 +360,13 @@ async function handleCreateCloudPlaylist() {
           <label class="public-toggle">
             <input v-model="createIsPublic" type="checkbox">
             <span class="toggle-icon">
-              <el-icon v-if="createIsPublic"><Link /></el-icon>
-              <el-icon v-else><Lock /></el-icon>
+              <MdiIcon v-if="createIsPublic" :path="mdiEyeOutline" size="18px" />
+              <MdiIcon v-else :path="mdiEyeOffOutline" size="18px" />
             </span>
             <span>{{ createIsPublic ? '公开歌单' : '私密歌单' }}</span>
           </label>
           <button class="submit-create-btn" :disabled="creatingPlaylist" @click="handleCreateCloudPlaylist">
-            <el-icon><Plus /></el-icon>
+            <MdiIcon :path="mdiPlus" size="18px" />
             {{ creatingPlaylist ? '创建中…' : '确认创建' }}
           </button>
         </div>
@@ -417,11 +416,7 @@ async function handleCreateCloudPlaylist() {
             @dragend="onDragEnd"
           >
             <span v-if="playerStore.isLocalTarget" class="drag-handle">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
-                <circle cx="5" cy="4" r="1.2"/><circle cx="11" cy="4" r="1.2"/>
-                <circle cx="5" cy="8" r="1.2"/><circle cx="11" cy="8" r="1.2"/>
-                <circle cx="5" cy="12" r="1.2"/><circle cx="11" cy="12" r="1.2"/>
-              </svg>
+              <MdiIcon :path="mdiDrag" size="16px" />
             </span>
             <img :src="item.coverUrl" :alt="item.title" class="queue-cover" draggable="false">
             <div class="queue-copy">
@@ -435,7 +430,7 @@ async function handleCreateCloudPlaylist() {
               title="从本地歌单移除"
               @click.stop="playerStore.removeLocalSong(index)"
             >
-              <el-icon><Delete /></el-icon>
+              <MdiIcon :path="mdiDeleteOutline" size="18px" />
           </button>
           </div>
         </div>
@@ -457,9 +452,9 @@ async function handleCreateCloudPlaylist() {
             :class="{ active: playerStore.playMode === option.id }"
             @click="setMode(option.id)"
           >
-            <el-icon><component :is="option.icon" /></el-icon>
+            <MdiIcon :path="option.icon" size="18px" />
             <span>{{ option.label }}</span>
-            <el-icon v-if="playerStore.playMode === option.id" class="active-mark"><Histogram /></el-icon>
+            <MdiIcon v-if="playerStore.playMode === option.id" :path="mdiPoll" class="active-mark" size="18px" />
           </button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
+import { mdiArrowLeft, mdiLoading } from '@mdi/js'
 import SongCard from '@/components/SongCard.vue'
 import { getRecentSongs } from '@/api/song'
 import type { Song } from '@/api/song'
@@ -34,7 +35,8 @@ async function loadSongs(reset = false) {
     const newSongs = resp.songs
     allSongs.value = reset ? newSongs : [...allSongs.value, ...newSongs]
     if (newSongs.length > 0) {
-      cursor.value = newSongs[newSongs.length - 1].create_time
+      const lastSong = newSongs[newSongs.length - 1]
+      if (lastSong) cursor.value = lastSong.create_time
     }
     hasMore.value = newSongs.length === LIMIT
   } catch (e) {
@@ -112,7 +114,7 @@ onUnmounted(() => {
     <!-- 头部 -->
     <div class="page-header">
       <RouterLink to="/" class="back-btn">
-        <el-icon><ArrowLeft /></el-icon>
+        <MdiIcon :path="mdiArrowLeft" size="18px" />
         <span>返回</span>
       </RouterLink>
       <div class="page-title-wrap">
@@ -164,7 +166,7 @@ onUnmounted(() => {
 
     <!-- 加载更多 -->
     <div v-if="loadingMore" class="loading-more">
-      <el-icon class="is-loading"><Loading /></el-icon>
+      <MdiIcon class="spinning-icon" :path="mdiLoading" size="18px" />
       <span>加载更多…</span>
     </div>
 
@@ -208,6 +210,10 @@ onUnmounted(() => {
 
 .back-btn:hover {
   color: var(--theme-color);
+}
+
+.spinning-icon {
+  animation: hw-spin 1s linear infinite;
 }
 
 .page-title-wrap {
@@ -355,6 +361,11 @@ onUnmounted(() => {
 
 .skel-line-sub {
   width: 55%;
+}
+
+@keyframes hw-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .skel-line-meta {

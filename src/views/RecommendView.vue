@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
+import { mdiArrowLeft } from '@mdi/js'
 import SongCard from '@/components/SongCard.vue'
 import { getRecommendSongs } from '@/api/song'
 import type { Song } from '@/api/song'
@@ -35,7 +36,7 @@ onMounted(() => {
     <!-- 头部 -->
     <div class="page-header">
       <button class="back-btn" @click="router.back()">
-        <el-icon><ArrowLeft /></el-icon>
+        <MdiIcon :path="mdiArrowLeft" size="18px" />
         <span>返回</span>
       </button>
       <div class="page-title-wrap">

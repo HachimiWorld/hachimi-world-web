@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
+import { mdiArrowLeft, mdiLoading } from '@mdi/js'
 import SongCard from '@/components/SongCard.vue'
 import { getSongsByTag } from '@/api/song'
 import type { SearchSongItem } from '@/api/song'
@@ -83,7 +84,7 @@ onUnmounted(() => {
     <!-- 头部 -->
     <div class="tag-header">
       <button class="back-btn" @click="router.back()">
-        <el-icon><ArrowLeft /></el-icon>
+        <MdiIcon :path="mdiArrowLeft" size="18px" />
         <span>返回</span>
       </button>
       <div class="tag-title-wrap">
@@ -117,7 +118,7 @@ onUnmounted(() => {
 
     <!-- 加载更多指示 -->
     <div v-if="loadingMore" class="loading-more">
-      <el-icon class="is-loading"><Loading /></el-icon>
+      <MdiIcon class="spinning-icon" :path="mdiLoading" size="18px" />
       <span>加载中…</span>
     </div>
 
@@ -165,6 +166,10 @@ onUnmounted(() => {
   color: var(--theme-color);
 }
 
+.spinning-icon {
+  animation: hw-spin 1s linear infinite;
+}
+
 .tag-title-wrap {
   display: flex;
   align-items: baseline;
@@ -203,6 +208,11 @@ onUnmounted(() => {
 
 @media (max-width: 640px) {
   .songs-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+}
+
+@keyframes hw-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 420px) {

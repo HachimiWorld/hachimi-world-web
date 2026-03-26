@@ -2,6 +2,8 @@
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
+import { mdiAccountPlus, mdiCog, mdiHeartOutline, mdiHistory, mdiHome, mdiPencil, mdiPlaylistMusic } from '@mdi/js'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
 import lightLogoUrl from '@/assets/logo-light.svg'
 import darkLogoUrl from '@/assets/logo-dark.svg'
 
@@ -16,13 +18,13 @@ const themeStore = useThemeStore()
 const currentLogoUrl = computed(() => (themeStore.isDark ? darkLogoUrl : lightLogoUrl))
 
 const navItems = [
-  { label: '首页', path: '/', icon: 'House' },
-  { label: '点赞', path: '/upvote', icon: 'Star' },
-  { label: '历史', path: '/history', icon: 'Clock' },
-  { label: '歌单', path: '/playlist', icon: 'List' },
-  { label: '关注', path: '/feed', icon: 'Bell' },
-  { label: '创作', path: '/create', icon: 'EditPen' },
-  { label: '设置', path: '/settings', icon: 'Setting' },
+  { label: '首页', path: '/', icon: mdiHome },
+  { label: '点赞', path: '/upvote', icon: mdiHeartOutline },
+  { label: '历史', path: '/history', icon: mdiHistory },
+  { label: '歌单', path: '/playlist', icon: mdiPlaylistMusic },
+  { label: '关注', path: '/feed', icon: mdiAccountPlus },
+  { label: '创作', path: '/create', icon: mdiPencil },
+  { label: '设置', path: '/settings', icon: mdiCog },
 ]
 
 function navigate(path: string) {
@@ -57,7 +59,7 @@ function isActive(path: string) {
           :class="{ active: isActive(item.path) }"
           @click="navigate(item.path)"
         >
-          <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
+          <MdiIcon class="nav-icon" :path="item.icon" size="18px" />
           <span>{{ item.label }}</span>
         </button>
       </nav>

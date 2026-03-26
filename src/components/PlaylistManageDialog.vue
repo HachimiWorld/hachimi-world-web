@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { FolderAdd, Check, Plus, Lock, Link } from '@element-plus/icons-vue'
+import {
+  mdiEyeOffOutline,
+  mdiEyeOutline,
+  mdiPlaylistMusic,
+  mdiPlaylistPlus,
+  mdiPlus,
+} from '@mdi/js'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
 import { ApiError } from '@/api/request'
 import {
   createPlaylist,
@@ -126,7 +133,7 @@ watch(
       <div class="playlist-manage-shell">
         <section class="create-panel">
           <div class="panel-title-row">
-            <el-icon><FolderAdd /></el-icon>
+            <MdiIcon :path="mdiPlaylistMusic" size="18px" />
             <span>新建歌单</span>
           </div>
 
@@ -143,13 +150,13 @@ watch(
             <label class="public-toggle">
               <input v-model="createIsPublic" type="checkbox">
               <span class="toggle-icon">
-                <el-icon v-if="createIsPublic"><Link /></el-icon>
-                <el-icon v-else><Lock /></el-icon>
+                <MdiIcon v-if="createIsPublic" :path="mdiEyeOutline" size="18px" />
+                <MdiIcon v-else :path="mdiEyeOffOutline" size="18px" />
               </span>
               <span>{{ createIsPublic ? '公开歌单' : '私密歌单' }}</span>
             </label>
             <button class="create-btn" :disabled="creating" @click="handleCreate">
-              <el-icon><Plus /></el-icon>
+              <MdiIcon :path="mdiPlus" size="18px" />
               {{ creating ? '创建中…' : '创建并加入' }}
             </button>
           </div>
@@ -180,8 +187,7 @@ watch(
                 </span>
               </div>
               <span class="playlist-action">
-                <el-icon v-if="containingIds.includes(playlist.id)"><Check /></el-icon>
-                <el-icon v-else><Plus /></el-icon>
+                <MdiIcon :path="mdiPlaylistPlus" size="18px" />
               </span>
             </button>
           </div>

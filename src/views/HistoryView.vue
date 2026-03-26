@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Clock, Delete } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { mdiClockOutline } from '@mdi/js'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
 import { ApiError } from '@/api/request'
 import {
   getPlayHistoryCursor,
@@ -89,7 +90,7 @@ onMounted(() => {
     <div class="history-shell">
       <div class="history-hero">
         <div class="hero-left">
-          <el-icon class="hero-icon"><Clock /></el-icon>
+          <MdiIcon class="hero-icon" :path="mdiClockOutline" size="36px" />
           <div>
             <h1 class="hero-title">播放历史</h1>
             <p class="hero-sub">记录每一次曼波</p>
@@ -99,7 +100,7 @@ onMounted(() => {
 
       <!-- 未登录 -->
       <div v-if="!userStore.isLoggedIn" class="state-card">
-        <el-icon class="state-icon"><Clock /></el-icon>
+        <MdiIcon class="state-icon" :path="mdiClockOutline" size="48px" />
         <p>登录后才能查看播放历史</p>
         <button class="login-prompt-btn" @click="loginDialogOpen = true">去登录</button>
       </div>
@@ -123,7 +124,7 @@ onMounted(() => {
 
       <!-- 空历史 -->
       <div v-else-if="items.length === 0" class="state-card">
-        <el-icon class="state-icon"><Clock /></el-icon>
+        <MdiIcon class="state-icon" :path="mdiClockOutline" size="48px" />
         <p>还没有播放记录，去听点音乐吧</p>
       </div>
 

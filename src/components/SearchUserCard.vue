@@ -2,7 +2,8 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { UserSearchItem } from '@/api/search'
-import { Male, Female, Avatar } from '@element-plus/icons-vue'
+import { mdiAccount, mdiGenderFemale, mdiGenderMale } from '@mdi/js'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
 
 const props = defineProps<{
   item: UserSearchItem
@@ -11,9 +12,9 @@ const props = defineProps<{
 const router = useRouter()
 
 const genderIcon = computed(() => {
-  if (props.item.gender === 0) return Male
-  if (props.item.gender === 1) return Female
-  return Avatar
+  if (props.item.gender === 0) return mdiGenderMale
+  if (props.item.gender === 1) return mdiGenderFemale
+  return mdiAccount
 })
 
 const genderText = computed(() => {
@@ -37,7 +38,7 @@ function openUser() {
       <div class="user-topline">
         <h3 class="user-name">{{ item.username }}</h3>
         <div class="user-gender">
-          <el-icon><component :is="genderIcon" /></el-icon>
+          <MdiIcon :path="genderIcon" size="16px" />
           <span>{{ genderText }}</span>
         </div>
       </div>

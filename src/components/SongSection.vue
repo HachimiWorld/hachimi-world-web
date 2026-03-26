@@ -2,6 +2,8 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import SongCard from './SongCard.vue'
 import type { Song, SearchSongItem } from '@/api/song'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
+import { mdiArrowRight, mdiLoading } from '@mdi/js'
 
 const props = defineProps<{
   title: string
@@ -55,7 +57,7 @@ function onGridMounted(el: HTMLElement | null) {
       <h2 class="section-title">{{ title }}</h2>
       <RouterLink v-if="moreRoute" :to="moreRoute" class="section-more">
         查看更多
-        <el-icon><ArrowRight /></el-icon>
+        <MdiIcon :path="mdiArrowRight" size="16px" />
       </RouterLink>
     </div>
 
@@ -104,7 +106,7 @@ function onGridMounted(el: HTMLElement | null) {
 
       <!-- 右侧加载中指示 -->
       <div v-if="!loading && loadingMore" class="inline-loading">
-        <el-icon class="is-loading"><Loading /></el-icon>
+        <MdiIcon class="spinning-icon" :path="mdiLoading" size="18px" />
       </div>
     </div>
   </section>
@@ -157,6 +159,10 @@ function onGridMounted(el: HTMLElement | null) {
 
 .section-more:hover {
   color: var(--theme-color);
+}
+
+.spinning-icon {
+  animation: hw-spin 1s linear infinite;
 }
 
 /* ── 滚动容器 ── */

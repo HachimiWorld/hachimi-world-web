@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { mdiHeadphones, mdiHeartOutline, mdiClockOutline } from '@mdi/js'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
 import type { SearchSongItem } from '@/api/song'
-import { Clock, Headset } from '@element-plus/icons-vue'
 
 const props = defineProps<{
   item: SearchSongItem
@@ -55,15 +56,15 @@ function openUser(e: MouseEvent) {
       <div class="song-meta">
         <button class="meta-link" @click="openUser">{{ item.uploader_name }}</button>
         <span class="meta-item">
-          <el-icon><Clock /></el-icon>
+          <MdiIcon :path="mdiClockOutline" size="13px" />
           {{ formatDuration(item.duration_seconds) }}
         </span>
         <span class="meta-item">
-          <el-icon><Headset /></el-icon>
+          <MdiIcon :path="mdiHeadphones" size="13px" />
           {{ formatCount(item.play_count) }}
         </span>
         <span class="meta-item like-item">
-          <span class="triangle-icon"></span>
+          <MdiIcon :path="mdiHeartOutline" size="13px" />
           {{ formatCount(item.like_count) }}
         </span>
       </div>

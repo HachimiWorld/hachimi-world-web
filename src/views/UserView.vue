@@ -1,7 +1,18 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Headset, Warning, Male, Female, Avatar, Tickets, Edit, Check, Close } from '@element-plus/icons-vue'
+import {
+  mdiAccount,
+  mdiAlertCircleOutline,
+  mdiCheck,
+  mdiClose,
+  mdiHeadphones,
+  mdiPencil,
+  mdiPlaylistMusic,
+  mdiGenderFemale,
+  mdiGenderMale,
+} from '@mdi/js'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
 import SongCard from '@/components/SongCard.vue'
 import { ApiError } from '@/api/request'
 import {
@@ -136,9 +147,9 @@ function getDescription() {
 }
 
 const genderIcon = computed(() => {
-  if (profile.value?.gender === 0) return Male
-  if (profile.value?.gender === 1) return Female
-  return Avatar
+  if (profile.value?.gender === 0) return mdiGenderMale
+  if (profile.value?.gender === 1) return mdiGenderFemale
+  return mdiAccount
 })
 
 const genderText = computed(() => {
@@ -281,8 +292,8 @@ onMounted(() => {
                         @keyup.enter="submitEdit"
                         @keyup.esc="cancelEdit"
                       />
-                      <button class="inline-edit-btn confirm" :disabled="editLoading" @click="submitEdit"><el-icon><Check /></el-icon></button>
-                      <button class="inline-edit-btn cancel" @click="cancelEdit"><el-icon><Close /></el-icon></button>
+                      <button class="inline-edit-btn confirm" :disabled="editLoading" @click="submitEdit"><MdiIcon :path="mdiCheck" size="16px" /></button>
+                      <button class="inline-edit-btn cancel" @click="cancelEdit"><MdiIcon :path="mdiClose" size="16px" /></button>
                     </div>
                   </template>
                   <h1
@@ -301,8 +312,8 @@ onMounted(() => {
                         <el-option label="非女人" value="0" />
                         <el-option label="非男人" value="1" />
                       </el-select>
-                      <button class="inline-edit-btn confirm" :disabled="editLoading" @click="submitEdit"><el-icon><Check /></el-icon></button>
-                      <button class="inline-edit-btn cancel" @click="cancelEdit"><el-icon><Close /></el-icon></button>
+                      <button class="inline-edit-btn confirm" :disabled="editLoading" @click="submitEdit"><MdiIcon :path="mdiCheck" size="16px" /></button>
+                      <button class="inline-edit-btn cancel" @click="cancelEdit"><MdiIcon :path="mdiClose" size="16px" /></button>
                     </div>
                   </template>
                   <p
@@ -314,7 +325,7 @@ onMounted(() => {
                   >
                     UID {{ profile.uid }}
                     <span class="subline-dot">·</span>
-                    <el-icon class="gender-icon"><component :is="genderIcon" /></el-icon>
+                    <MdiIcon class="gender-icon" :path="genderIcon" size="16px" />
                     {{ genderText }}
                   </p>
                 </div>
@@ -333,8 +344,8 @@ onMounted(() => {
                     @keyup.esc="cancelEdit"
                   />
                   <div class="inline-edit-row" style="margin-top:6px">
-                    <button class="inline-edit-btn confirm" :disabled="editLoading" @click="submitEdit"><el-icon><Check /></el-icon>保存</button>
-                    <button class="inline-edit-btn cancel" @click="cancelEdit"><el-icon><Close /></el-icon>取消</button>
+                    <button class="inline-edit-btn confirm" :disabled="editLoading" @click="submitEdit"><MdiIcon :path="mdiCheck" size="16px" />保存</button>
+                    <button class="inline-edit-btn cancel" @click="cancelEdit"><MdiIcon :path="mdiClose" size="16px" />取消</button>
                   </div>
                 </div>
               </template>
@@ -361,7 +372,7 @@ onMounted(() => {
         </div>
 
         <div v-if="pageError && !profileLoading && !songsLoading" class="state-card error-state">
-          <el-icon><Warning /></el-icon>
+          <MdiIcon :path="mdiAlertCircleOutline" size="20px" />
           <span>{{ pageError }}</span>
         </div>
 
@@ -386,7 +397,7 @@ onMounted(() => {
           </div>
 
           <div v-else class="state-card empty-state">
-            <el-icon><Headset /></el-icon>
+            <MdiIcon :path="mdiHeadphones" size="20px" />
             <span>这个人还没有公开发布作品</span>
           </div>
 

@@ -3,17 +3,19 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
-  CaretRight,
-  Pointer,
-  Plus,
-  Share,
-  Headset,
-  Calendar,
-  PriceTag,
-  Document,
-  Warning,
-  User,
-} from '@element-plus/icons-vue'
+  mdiAccount,
+  mdiAlertCircleOutline,
+  mdiClockEditOutline,
+  mdiHeartOutline,
+  mdiInformationOutline,
+  mdiPlay,
+  mdiPlaylistPlus,
+  mdiPlus,
+  mdiShareVariant,
+  mdiTag,
+  mdiHeadphones,
+} from '@mdi/js'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
 import { ApiError } from '@/api/request'
 import { getSongDetailById, likeSong, unlikeSong, type Song } from '@/api/song'
 import { usePlayerStore } from '@/stores/player'
@@ -80,13 +82,15 @@ function isLrc(text: string): boolean {
 function parseLrc(text: string): LrcLine[] {
   const lines: LrcLine[] = []
   const regex = /\[(\d{2}):(\d{2})[.:](\d{2,3})\](.*)/g
-  let match
+  let match: RegExpExecArray | null
   while ((match = regex.exec(text)) !== null) {
-    const mm = parseInt(match[1])
-    const ss = parseInt(match[2])
-    const ms = parseInt(match[3].length === 2 ? match[3] + '0' : match[3])
+    const [, mmText, ssText, msText, rawLineText] = match
+    if (!mmText || !ssText || !msText || rawLineText === undefined) continue
+    const mm = parseInt(mmText)
+    const ss = parseInt(ssText)
+    const ms = parseInt(msText.length === 2 ? msText + '0' : msText)
     const time = mm * 60 + ss + ms / 1000
-    const lineText = match[4].trim()
+    const lineText = rawLineText.trim()
     lines.push({ time, text: lineText })
   }
   return lines.sort((a, b) => a.time - b.time)
@@ -127,7 +131,9 @@ const activeLrcIndex = computed(() => {
   const t = playerStore.currentTime
   let idx = 0
   for (let i = 0; i < lrcLines.value.length; i++) {
-    if (lrcLines.value[i].time <= t) idx = i
+    const line = lrcLines.value[i]
+    if (!line) continue
+    if (line.time <= t) idx = i
     else break
   }
   return idx
@@ -369,7 +375,7 @@ onUnmounted(() => {
       </section>
 
       <section v-else-if="pageError" class="state-card error-state">
-        <el-icon><Warning /></el-icon>
+        <MdiIcon :path="mdiAlertCircleOutline" size="20px" />
         <span>{{ pageError }}</span>
       </section>
 
@@ -430,37 +436,38 @@ onUnmounted(() => {
 
               <div class="meta-inline">
                 <button class="author-link" @click="jumpToUploader">
-                  <el-icon><User /></el-icon>
+                  <MdiIcon :path="mdiAccount" size="16px" />
                   {{ song.uploader_name }}
                 </button>
                 <span class="meta-pill">
-                  <el-icon><Calendar /></el-icon>
+                  <MdiIcon :path="mdiClockEditOutline" size="16px" />
                   {{ formatDate(song.release_time) }}
                 </span>
                 <span class="meta-pill">
-                  <el-icon><Headset /></el-icon>
+                  <MdiIcon :path="mdiHeadphones" size="16px" />
                   {{ formatCount(song.play_count) }}
                 </span>
                 <span class="meta-pill like-pill" :class="{ active: liked }">
-                  ▲ {{ formatCount(song.like_count) }}
+                  <MdiIcon :path="mdiHeartOutline" size="16px" />
+                  {{ formatCount(song.like_count) }}
                 </span>
               </div>
 
               <div class="action-row">
                 <button class="action-btn primary" @click="handlePlay">
-                  <el-icon class="detail-play-icon"><CaretRight /></el-icon>
+                  <MdiIcon :path="mdiPlay" class="detail-play-icon" size="18px" />
                   播放
                 </button>
                 <button class="action-btn" :class="{ liked: liked }" :disabled="likeLoading" @click="handleLike">
-                  <el-icon><Pointer /></el-icon>
+                  <MdiIcon :path="mdiHeartOutline" size="18px" />
                   {{ liked ? '取消点赞' : '点赞' }}
                 </button>
                 <button class="action-btn" @click="handleOpenPlaylist">
-                  <el-icon><Plus /></el-icon>
+                  <MdiIcon :path="mdiPlus" size="18px" />
                   加入歌单
                 </button>
                 <button class="action-btn" @click="handleShare">
-                  <el-icon><Share /></el-icon>
+                  <MdiIcon :path="mdiShareVariant" size="18px" />
                   分享
                 </button>
               </div>
@@ -476,7 +483,7 @@ onUnmounted(() => {
 
               <div class="desc-panel">
                 <div class="section-caption">
-                  <el-icon><Document /></el-icon>
+                  <MdiIcon :path="mdiInformationOutline" size="18px" />
                   <span>歌曲描述</span>
                 </div>
                 <p class="song-description">
@@ -486,7 +493,7 @@ onUnmounted(() => {
 
               <div v-if="song.tags.length" class="tags-panel">
                 <div class="section-caption">
-                  <el-icon><PriceTag /></el-icon>
+                  <MdiIcon :path="mdiTag" size="18px" />
                   <span>标签</span>
                 </div>
                 <div class="tag-list">

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { mdiAccount, mdiHeartOutline, mdiHeadphones } from '@mdi/js'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
 import type { Song, SearchSongItem } from '@/api/song'
 
 const props = defineProps<{
@@ -41,7 +43,7 @@ function handleClick() {
         loading="lazy"
       />
       <div v-else class="cover-placeholder">
-        <el-icon><Headset /></el-icon>
+        <MdiIcon :path="mdiAccount" size="32px" />
       </div>
       <div class="duration-badge">{{ formatDuration(song.duration_seconds) }}</div>
     </div>
@@ -50,12 +52,11 @@ function handleClick() {
       <p class="card-uploader">{{ song.uploader_name }}</p>
       <div class="card-meta">
         <span class="meta-item">
-          <el-icon><Headset /></el-icon>
+          <MdiIcon :path="mdiHeadphones" size="12px" />
           {{ formatCount(song.play_count) }}
         </span>
         <span class="meta-item like-item">
-          <!-- 正三角形，用 CSS border trick -->
-          <span class="triangle-icon"></span>
+          <MdiIcon :path="mdiHeartOutline" size="12px" />
           {{ formatCount(song.like_count) }}
         </span>
       </div>

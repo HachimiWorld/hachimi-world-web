@@ -2,7 +2,16 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Tickets, Star, Lock, Unlock, Delete, Edit } from '@element-plus/icons-vue'
+import {
+  mdiDeleteOutline,
+  mdiEyeOffOutline,
+  mdiEyeOutline,
+  mdiHeartOutline,
+  mdiPencil,
+  mdiPlaylistMusic,
+  mdiPlus,
+} from '@mdi/js'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
 import { ApiError } from '@/api/request'
 import {
   getMyPlaylists,
@@ -162,7 +171,7 @@ onMounted(() => {
             :class="{ active: activeTab === 'mine' }"
             @click="switchTab('mine')"
           >
-            <el-icon><Tickets /></el-icon>
+            <MdiIcon :path="mdiPlaylistMusic" size="18px" />
             我的歌单
           </button>
           <button
@@ -170,12 +179,12 @@ onMounted(() => {
             :class="{ active: activeTab === 'favorites' }"
             @click="switchTab('favorites')"
           >
-            <el-icon><Star /></el-icon>
+            <MdiIcon :path="mdiHeartOutline" size="18px" />
             收藏的歌单
           </button>
         </div>
         <button v-if="activeTab === 'mine'" class="pv-create-btn" @click="openCreateDialog">
-          <el-icon><Plus /></el-icon>
+          <MdiIcon :path="mdiPlus" size="18px" />
           新建歌单
         </button>
       </div>
@@ -183,7 +192,7 @@ onMounted(() => {
       <!-- 未登录提示 -->
       <div v-if="!userStore.isLoggedIn" class="pv-login-prompt">
         <div class="pv-prompt-inner">
-          <span class="pv-prompt-icon">♪</span>
+          <span class="pv-prompt-icon"><MdiIcon :path="mdiPlaylistMusic" size="30px" /></span>
           <p>登录后即可管理和收藏歌单</p>
           <button class="pv-login-btn" @click="loginDialogOpen = true">立即登录</button>
         </div>
@@ -226,7 +235,7 @@ onMounted(() => {
               <div class="pv-card-titlerow">
                 <span class="pv-card-name">{{ pl.name }}</span>
                 <span class="pv-visibility-chip" :class="pl.is_public ? 'public' : 'private'">
-                  <el-icon><component :is="pl.is_public ? Unlock : Lock" /></el-icon>
+                  <MdiIcon :path="pl.is_public ? mdiEyeOutline : mdiEyeOffOutline" size="16px" />
                   {{ pl.is_public ? '公开' : '私密' }}
                 </span>
               </div>
@@ -235,17 +244,17 @@ onMounted(() => {
             </div>
             <div class="pv-card-actions"  @click.stop>
               <button class="pv-action-btn" title="编辑" @click="router.push('/playlist/' + pl.id)">
-                <el-icon><Edit /></el-icon>
+                <MdiIcon :path="mdiPencil" size="18px" />
               </button>
               <button class="pv-action-btn danger" title="删除" @click="handleDeletePlaylist(pl, $event)">
-                <el-icon><Delete /></el-icon>
+                <MdiIcon :path="mdiDeleteOutline" size="18px" />
               </button>
             </div>
           </div>
         </div>
 
         <div v-else class="pv-empty">
-          <span class="pv-empty-icon">♫</span>
+          <span class="pv-empty-icon"><MdiIcon :path="mdiPlaylistMusic" size="34px" /></span>
           <p>还没有歌单，点击右上角新建一个吧</p>
         </div>
       </template>
@@ -291,14 +300,14 @@ onMounted(() => {
             </div>
             <div class="pv-card-actions" @click.stop>
               <button class="pv-action-btn danger" title="取消收藏" @click="handleUnfavorite(pl, $event)">
-                <el-icon><Star /></el-icon>
+                <MdiIcon :path="mdiHeartOutline" size="18px" />
               </button>
             </div>
           </div>
         </div>
 
         <div v-else class="pv-empty">
-          <span class="pv-empty-icon">♥</span>
+          <span class="pv-empty-icon"><MdiIcon :path="mdiHeartOutline" size="34px" /></span>
           <p>还没有收藏任何歌单</p>
         </div>
       </template>

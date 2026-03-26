@@ -2,7 +2,8 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Delete, Clock, Headset } from '@element-plus/icons-vue'
+import { mdiDeleteOutline, mdiHeadphones, mdiHeartOutline, mdiClockOutline } from '@mdi/js'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
 import type { Song } from '@/api/song'
 
 const props = defineProps<{ song: Song }>()
@@ -11,8 +12,8 @@ const router = useRouter()
 const coverUrl = computed(() => props.song.cover_url || '')
 
 const subtitleText = computed(() => {
-  if (props.song.origin_infos?.length) {
-    const first = props.song.origin_infos[0]
+  const first = props.song.origin_infos?.[0]
+  if (first) {
     const parts = [props.song.uploader_name]
     if (first.title) parts.push(`原曲 ${first.title}`)
     return parts.join(' · ')
@@ -54,22 +55,22 @@ function onDelete(e: MouseEvent) {
       <div class="song-topline">
         <h3 class="song-title">{{ song.title }}</h3>
         <button class="delete-btn" title="删除" @click.stop="onDelete">
-          <el-icon><Delete /></el-icon>
+          <MdiIcon :path="mdiDeleteOutline" size="16px" />
         </button>
       </div>
       <p class="song-subtitle">{{ subtitleText }}</p>
       <p v-if="song.description" class="song-desc">{{ song.description }}</p>
       <div class="song-meta">
         <span class="meta-item">
-          <el-icon><Clock /></el-icon>
+          <MdiIcon :path="mdiClockOutline" size="12px" />
           {{ formatDuration(song.duration_seconds) }}
         </span>
         <span class="meta-item">
-          <el-icon><Headset /></el-icon>
+          <MdiIcon :path="mdiHeadphones" size="12px" />
           {{ formatCount(song.play_count) }}
         </span>
         <span class="meta-item like-item">
-          <span class="triangle-icon"></span>
+          <MdiIcon :path="mdiHeartOutline" size="12px" />
           {{ formatCount(song.like_count) }}
         </span>
         <span v-if="song.display_id" class="meta-item jmid">{{ song.display_id }}</span>

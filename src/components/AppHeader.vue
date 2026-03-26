@@ -5,7 +5,12 @@ import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/theme'
 import MobileSidebar from './MobileSidebar.vue'
 import LoginDialog from './LoginDialog.vue'
-import { Search, UserFilled } from '@element-plus/icons-vue'
+import MdiIcon from '@/components/icons/MdiIcon.vue'
+import {
+  mdiAccount,
+  mdiMagnify,
+  mdiMenu,
+} from '@mdi/js'
 import lightLogoUrl from '@/assets/logo-light.svg'
 import darkLogoUrl from '@/assets/logo-dark.svg'
 
@@ -69,9 +74,7 @@ function handleAvatarClick() {
 
       <!-- 手机端汉堡菜单按钮 -->
       <button class="hamburger mobile-only" @click="sidebarOpen = true" aria-label="打开菜单">
-        <span class="hamburger-line" />
-        <span class="hamburger-line" />
-        <span class="hamburger-line" />
+        <MdiIcon :path="mdiMenu" size="24px" />
       </button>
 
       <!-- PC端：导航+搜索整体居中 -->
@@ -96,7 +99,7 @@ function handleAvatarClick() {
             clearable
           >
             <template #prefix>
-              <el-icon><Search /></el-icon>
+              <MdiIcon :path="mdiMagnify" size="16px" />
             </template>
           </el-input>
         </div>
@@ -112,7 +115,7 @@ function handleAvatarClick() {
           clearable
         >
           <template #prefix>
-            <el-icon><Search /></el-icon>
+            <MdiIcon :path="mdiMagnify" size="16px" />
           </template>
         </el-input>
       </div>
@@ -130,7 +133,7 @@ function handleAvatarClick() {
         </template>
         <template v-else>
           <div class="avatar-placeholder">
-            <el-icon><UserFilled /></el-icon>
+            <MdiIcon :path="mdiAccount" size="18px" />
           </div>
         </template>
       </div>
@@ -262,7 +265,7 @@ function handleAvatarClick() {
 .header-avatar {
   flex-shrink: 0;
   margin-left: 10px;
-  cursor: pointer;
+  color: var(--hw-text-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -310,7 +313,12 @@ function handleAvatarClick() {
   cursor: pointer;
   border-radius: 6px;
   flex-shrink: 0;
+  color: var(--hw-text-primary);
   transition: background 0.15s;
+}
+
+:deep(.hamburger .mdi-icon) {
+  color: inherit;
 }
 
 .hamburger:hover {

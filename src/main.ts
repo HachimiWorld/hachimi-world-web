@@ -5,7 +5,6 @@ import { createPinia } from 'pinia'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import '@mdi/font/css/materialdesignicons.css'
-import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 
 import App from './App.vue'
@@ -17,11 +16,6 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 app.use(ElementPlus)
-
-// 全局注册所有 Element Plus 图标
-for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
-  app.component(key, component)
-}
 
 app.mount('#app')
 
