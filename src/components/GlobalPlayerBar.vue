@@ -281,7 +281,7 @@ async function handleCreateCloudPlaylist() {
           </button>
           <button class="player-btn play-btn" :disabled="!playerStore.hasQueue" @click="playerStore.togglePlay">
             <MdiIcon v-if="playerStore.isPlaying" :path="mdiPause" class="play-icon" size="22px" />
-            <MdiIcon v-else :path="mdiPlay" class="play-icon" size="22px" />
+            <MdiIcon v-else :path="mdiPlay" class="play-icon play-icon--play" size="22px" />
           </button>
           <button class="player-btn ghost-btn" :disabled="!playerStore.hasQueue" @click="playerStore.next">
             <MdiIcon :path="mdiSkipNext" size="22px" />
@@ -663,7 +663,11 @@ async function handleCreateCloudPlaylist() {
 
 .play-icon {
   font-size: 18px;
-  transform: translateX(1px);
+  transform: none;
+}
+
+.play-icon--play {
+  transform: translateX(0px);
 }
 
 .pause-bars {

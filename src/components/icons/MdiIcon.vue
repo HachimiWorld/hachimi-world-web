@@ -30,9 +30,8 @@ const iconSize = computed(() => {
 
 <style scoped>
 .mdi-icon {
-  display: inline-block;
+  display: block;
   flex-shrink: 0;
-  vertical-align: middle;
 }
 </style>
 
