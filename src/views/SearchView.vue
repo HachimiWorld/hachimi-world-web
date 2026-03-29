@@ -124,9 +124,9 @@ async function loadResults(reset = true) {
   }
 
   if (reset) {
-    loading.value = true
+  loading.value = true
     loadingMore.value = false
-    errorText.value = ''
+  errorText.value = ''
   } else {
     loadingMore.value = true
   }
@@ -173,9 +173,9 @@ async function loadResults(reset = true) {
     errorText.value = e instanceof ApiError ? e.msg : '搜索失败，请稍后重试'
     processingTimeMs.value = null
     if (reset) {
-      musicHits.value = []
-      userHits.value = []
-      playlistHits.value = []
+    musicHits.value = []
+    userHits.value = []
+    playlistHits.value = []
       musicLoadedPages.value = 0
       userLoadedPages.value = 0
       playlistLoadedPages.value = 0
@@ -282,25 +282,25 @@ onMounted(() => {
           <div class="toolbar-right">
             <!-- 排序下拉（音乐 & 歌单 tab 显示） -->
             <div v-if="currentTab === 'music' || currentTab === 'playlist'" class="sort-select">
-              <button
-                class="sort-trigger"
-                :class="{ open: sortMenuOpen }"
-                @click="toggleSortMenu"
-              >
-                <span>{{ activeSortLabel }}</span>
+            <button
+              class="sort-trigger"
+              :class="{ open: sortMenuOpen }"
+              @click="toggleSortMenu"
+            >
+              <span>{{ activeSortLabel }}</span>
                 <MdiIcon class="sort-arrow" :class="{ open: sortMenuOpen }" :path="mdiChevronDown" size="18px" />
-              </button>
+            </button>
 
-              <div v-if="sortMenuOpen" class="sort-menu">
-                <button
+            <div v-if="sortMenuOpen" class="sort-menu">
+              <button
                   v-for="sort in currentSortOptions"
-                  :key="sort.id"
-                  class="sort-option"
+                :key="sort.id"
+                class="sort-option"
                   :class="{ active: currentTab === 'music' ? musicSort === sort.id : playlistSort === sort.id }"
-                  @click="changeSort(sort.id)"
-                >
-                  {{ sort.label }}
-                </button>
+                @click="changeSort(sort.id)"
+              >
+                {{ sort.label }}
+              </button>
               </div>
             </div>
 

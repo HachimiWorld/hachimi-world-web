@@ -205,14 +205,36 @@ export function getSongDetailById(id: number): Promise<Song> {
   return http.get<Song>(`/song/detail_by_id?id=${id}`)
 }
 
-export async function likeSong(songId: number): Promise<void> {
+export async function likeSong(songId: number, playbackPositionSecs?: number): Promise<void> {
   const token = await getToken()
-  return http.post<void>('/song/like', { song_id: songId }, token)
+  return http.post<void>('/song/likes/like', { song_id: songId, playback_position_secs: playbackPositionSecs ?? null }, token)
 }
 
 export async function unlikeSong(songId: number): Promise<void> {
   const token = await getToken()
-  return http.post<void>('/song/unlike', { song_id: songId }, token)
+  return http.post<void>('/song/likes/unlike', { song_id: songId }, token)
+}
+
+export interface MyLikeItem {
+  song_data: Song
+  liked_time: string
+}
+
+export interface MyLikesResp {
+  data: MyLikeItem[]
+  page_size: number
+  page_index: number
+  total: number
+}
+
+export async function getMyLikes(pageIndex = 0, pageSize = 30): Promise<MyLikesResp> {
+  const token = await getToken()
+  return http.get<MyLikesResp>(`/song/likes/page_my_likes?page_index=${pageIndex}&page_size=${pageSize}`, token)
+}
+
+export async function getLikeStatus(songId: number): Promise<{ liked: boolean }> {
+  const token = await getToken()
+  return http.get<{ liked: boolean }>(`/song/likes/status?song_id=${songId}`, token)
 }
 
 export async function updateUserProfile(params: {

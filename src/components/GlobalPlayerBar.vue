@@ -17,6 +17,8 @@ import {
   mdiSkipNext,
   mdiSkipPrevious,
   mdiVolumeHigh,
+  mdiVolumeMedium,
+  mdiVolumeLow,
   mdiDeleteOutline,
   mdiPlaylistPlay,
 } from '@mdi/js'
@@ -101,6 +103,12 @@ const modeIcon = computed(() => {
   if (playerStore.playMode === 'loop') return mdiRepeat
   if (playerStore.playMode === 'shuffle') return mdiShuffle
   return mdiPlaylistPlay
+})
+
+const volumeIcon = computed(() => {
+  if (volumeValue.value >= 51) return mdiVolumeHigh
+  if (volumeValue.value >= 1) return mdiVolumeMedium
+  return mdiVolumeLow
 })
 
 watch(
@@ -244,7 +252,7 @@ async function handleCreateCloudPlaylist() {
             </div>
 
             <div class="volume-readout">
-            <MdiIcon :path="mdiVolumeHigh" size="16px" />
+            <MdiIcon :path="volumeIcon" size="16px" />
               <span>{{ volumeValue }}%</span>
             </div>
           </div>
@@ -262,7 +270,7 @@ async function handleCreateCloudPlaylist() {
             <MdiIcon :path="mdiInformationOutline" size="18px" />
           </button>
           <button class="icon-tool-btn" @click="toggleVolumePanel">
-            <MdiIcon :path="mdiVolumeHigh" size="18px" />
+            <MdiIcon :path="volumeIcon" size="18px" />
           </button>
           <button class="icon-tool-btn" @click="togglePlaylistPanel">
             <MdiIcon :path="mdiPlaylistMusic" size="18px" />
@@ -297,7 +305,7 @@ async function handleCreateCloudPlaylist() {
           <span class="queue-subtitle">调整当前播放器音量</span>
         </div>
         <div class="volume-edit-row">
-            <MdiIcon :path="mdiVolumeHigh" class="volume-panel-icon" size="18px" />
+            <MdiIcon :path="volumeIcon" class="volume-panel-icon" size="18px" />
           <el-slider v-model="volumeValue" class="volume-slider" :max="100" :show-tooltip="false" />
           <span class="volume-value">{{ volumeValue }}%</span>
         </div>

@@ -17,7 +17,7 @@ import {
 } from '@mdi/js'
 import MdiIcon from '@/components/icons/MdiIcon.vue'
 import { ApiError } from '@/api/request'
-import { getSongDetailById, likeSong, unlikeSong, type Song } from '@/api/song'
+import { getSongDetailById, getLikeStatus, likeSong, unlikeSong, type Song } from '@/api/song'
 import { usePlayerStore } from '@/stores/player'
 import { useUserStore } from '@/stores/user'
 import LoginDialog from '@/components/LoginDialog.vue'
@@ -193,6 +193,15 @@ async function loadSong() {
 
   try {
     song.value = await getSongDetailById(songId.value)
+    // 初始化点赞状态（仅登录用户）
+    if (userStore.isLoggedIn) {
+      try {
+        const status = await getLikeStatus(songId.value)
+        liked.value = status.liked
+      } catch {
+        liked.value = false
+      }
+    }
   } catch (e) {
     pageError.value = e instanceof ApiError ? e.msg : '加载歌曲详情失败'
     song.value = null
