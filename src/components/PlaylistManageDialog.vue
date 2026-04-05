@@ -353,7 +353,7 @@ watch(
   margin: 0 !important;
   border-radius: 28px !important;
   overflow: hidden;
-  background: var(--hw-bg-primary) !important;
+  background: var(--hw-bg-panel) !important;
 }
 
 :deep(.playlist-manage-dialog .el-dialog__header),

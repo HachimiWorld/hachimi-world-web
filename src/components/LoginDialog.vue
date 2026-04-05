@@ -764,7 +764,7 @@ async function handleReset() {
 
 /* Dialog 深色适配 */
 :deep(.el-dialog) {
-  background: var(--hw-bg-primary);
+  background: var(--hw-bg-panel);
   border: 1px solid var(--hw-border);
   border-radius: 12px;
 }

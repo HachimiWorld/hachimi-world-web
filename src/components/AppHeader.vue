@@ -239,7 +239,7 @@ function handleAvatarClick() {
 }
 
 :deep(.search-input .el-input__wrapper) {
-  background: var(--hw-bg-input);
+  background: var(--hw-bg-panel);
   border-radius: 20px;
   box-shadow: none;
   border: 1px solid var(--hw-border);

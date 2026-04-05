@@ -81,35 +81,40 @@ button {
 
 /* ===== 浅色主题（默认）===== */
 :root {
-  --theme-color: #ff9800;
-  --theme-color-light: #ff980026;
+  --theme-color: #ff7022;
+  --theme-color-light: #da5d1a2b;
 
-  --hw-bg-primary: #ffffff;
-  --hw-bg-secondary: #f5f5f5;
-  --hw-bg-header: rgba(255, 255, 255, 0.88);
-  --hw-bg-input: #f5f5f5;
+  --hw-bg-primary: #ebe9e7;
+  --hw-bg-secondary: #f6f4f2;
+  --hw-bg-panel: #f6f4f2;
+  --hw-bg-header: rgba(246, 244, 242, 0.92);
+  --hw-bg-input: #f3f1ee;
   --hw-bg-hover: rgba(0, 0, 0, 0.05);
 
-  --hw-text-primary: #1a1a1a;
-  --hw-text-secondary: #555555;
-  --hw-text-tertiary: #999999;
+  --hw-text-primary: rgba(0, 0, 0, 0.87);
+  --hw-text-secondary: rgba(0, 0, 0, 0.6);
+  --hw-text-tertiary: rgba(0, 0, 0, 0.38);
 
-  --hw-border: #e5e5e5;
+  --hw-border: rgba(0, 0, 0, 0.1);
 }
 
 /* ===== 深色主题 ===== */
 :root.dark {
-  --hw-bg-primary: #121212;
-  --hw-bg-secondary: #1e1e1e;
-  --hw-bg-header: rgba(18, 18, 18, 0.88);
-  --hw-bg-input: #2a2a2a;
-  --hw-bg-hover: rgba(255, 255, 255, 0.07);
+  --theme-color: #ff782f;
+  --theme-color-light: #ff91552b;
 
-  --hw-text-primary: #ebebeb;
-  --hw-text-secondary: #aaaaaa;
-  --hw-text-tertiary: #666666;
+  --hw-bg-primary: #2b2a25;
+  --hw-bg-secondary: #35342f;
+  --hw-bg-panel: #35342f;
+  --hw-bg-header: rgba(53, 52, 47, 0.92);
+  --hw-bg-input: #3b3a34;
+  --hw-bg-hover: rgba(255, 255, 255, 0.1);
 
-  --hw-border: #2e2e2e;
+  --hw-text-primary: rgba(255, 255, 255, 0.87);
+  --hw-text-secondary: rgba(255, 255, 255, 0.6);
+  --hw-text-tertiary: rgba(255, 255, 255, 0.38);
+
+  --hw-border: rgba(255, 255, 255, 0.1);
 }
 
 /* ===== 留白页通用样式 ===== */
@@ -156,7 +161,8 @@ button {
 
 /* ===== Element Plus 主题色覆盖：Dialog/Button/Switch ===== */
 .el-dialog,
-.el-message-box {
+.el-message-box,
+.el-drawer {
   --el-color-primary: var(--theme-color);
   --el-color-primary-light-3: color-mix(in srgb, var(--theme-color) 70%, white);
   --el-color-primary-light-5: color-mix(in srgb, var(--theme-color) 50%, white);
@@ -164,6 +170,14 @@ button {
   --el-color-primary-light-8: color-mix(in srgb, var(--theme-color) 22%, white);
   --el-color-primary-light-9: color-mix(in srgb, var(--theme-color) 14%, white);
   --el-color-primary-dark-2: color-mix(in srgb, var(--theme-color) 82%, black);
+}
+
+.el-dialog,
+.el-message-box,
+.el-drawer {
+  background: var(--hw-bg-secondary);
+  color: var(--hw-text-primary);
+  border-color: var(--hw-border);
 }
 
 .el-button--primary {
@@ -196,7 +210,7 @@ button {
 
 /* ===== Element Plus 深色主题覆盖 ===== */
 :root.dark .el-dialog {
-  background: #1e1e1e;
+  background: var(--hw-bg-secondary);
   color: var(--hw-text-primary);
 }
 
@@ -248,7 +262,7 @@ button {
 }
 
 :root.dark .el-drawer {
-  background: var(--hw-bg-primary);
+  background: var(--hw-bg-secondary);
 }
 
 :root.dark .el-input__wrapper {
@@ -326,6 +340,24 @@ button {
 .el-select__popper.el-popper {
   background: var(--hw-bg-secondary) !important;
   border-color: var(--hw-border) !important;
+}
+
+.el-color-picker__trigger {
+  background: var(--hw-bg-primary) !important;
+  border-color: var(--hw-border) !important;
+}
+
+.el-color-picker__color {
+  border-color: var(--hw-border) !important;
+}
+
+.el-switch__core {
+  background: var(--hw-bg-primary) !important;
+  border-color: var(--hw-border) !important;
+}
+
+.el-switch.is-checked .el-switch__core {
+  border-color: var(--theme-color) !important;
 }
 
 .el-select__popper .el-select-dropdown__item {

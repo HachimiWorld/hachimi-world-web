@@ -73,7 +73,7 @@ function isActive(path: string) {
   flex-direction: column;
   height: 100%;
   padding: 0;
-  background: var(--hw-bg-primary);
+  background: var(--hw-bg-secondary);
 }
 
 .sidebar-logo {

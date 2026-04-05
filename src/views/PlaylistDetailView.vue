@@ -965,6 +965,10 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
   gap: 16px;
 }
 
+:deep(.pd-edit-dialog) {
+  background: var(--hw-bg-panel) !important;
+}
+
 .pd-edit-field {
   display: flex;
   flex-direction: column;
