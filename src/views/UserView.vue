@@ -13,6 +13,7 @@ import {
   mdiGenderMale,
 } from '@mdi/js'
 import MdiIcon from '@/components/icons/MdiIcon.vue'
+import bilibiliColorUrl from '@/assets/bilibili-color.svg'
 import SongCard from '@/components/SongCard.vue'
 import { ApiError } from '@/api/request'
 import {
@@ -156,6 +157,28 @@ const genderText = computed(() => {
   if (profile.value?.gender === 0) return '男人'
   if (profile.value?.gender === 1) return '女人'
   return '神没有性别'
+})
+
+const bilibiliAccount = computed(() => {
+  const currentProfile = profile.value
+  if (!currentProfile) return null
+
+  const connectedBilibili = currentProfile.connected_accounts?.find((account) => account.type === 'bilibili')
+  if (connectedBilibili) {
+    return {
+      id: connectedBilibili.id,
+      name: connectedBilibili.name || null,
+    }
+  }
+
+  if (currentProfile.bilibili_uid || currentProfile.bilibili_name) {
+    return {
+      id: currentProfile.bilibili_uid ? String(currentProfile.bilibili_uid) : null,
+      name: currentProfile.bilibili_name || null,
+    }
+  }
+
+  return null
 })
 
 async function loadProfile() {
@@ -356,6 +379,11 @@ onMounted(() => {
                 :title="isOwnProfile ? '点击修改签名' : ''"
                 @click="isOwnProfile ? startEdit('bio') : undefined"
               >{{ getDescription() }}</p>
+
+              <div v-if="bilibiliAccount" class="profile-bilibili-row">
+                <img :src="bilibiliColorUrl" alt="哔哩哔哩" class="profile-bilibili-icon">
+                <span class="profile-bilibili-value">{{ bilibiliAccount.name || `UID ${bilibiliAccount.id}` }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -507,7 +535,7 @@ onMounted(() => {
 }
 
 .profile-avatar {
-  border: 3px solid color-mix(in srgb, var(--theme-color) 28%, transparent);
+  border: 0 solid transparent;
   transition: filter 0.18s ease;
 }
 
@@ -662,15 +690,33 @@ onMounted(() => {
 }
 
 .profile-bio {
-  margin-top: 16px;
+  margin-top: 0;
   max-width: 760px;
   font-size: 14px;
   line-height: 1.8;
   color: var(--hw-text-secondary);
 }
 
+.profile-bilibili-row {
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
 
+.profile-bilibili-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: block;
+}
 
+.profile-bilibili-value {
+  color: var(--hw-text-primary);
+  font-weight: 600;
+}
 
 .works-panel {
   padding: 22px;

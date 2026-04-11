@@ -3,12 +3,21 @@ import { useAuthStore } from '@/stores/auth'
 
 // ── 类型定义 ──
 
+export interface ConnectedAccount {
+  type: string
+  id: string
+  name: string | null
+}
+
 export interface UserProfile {
   uid: number
   username: string
   avatar_url: string | null
   bio?: string | null
   gender?: number | null
+  bilibili_uid?: number | null
+  bilibili_name?: string | null
+  connected_accounts?: ConnectedAccount[]
   is_banned?: boolean
 }
 
