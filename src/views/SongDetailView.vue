@@ -1009,7 +1009,7 @@ onUnmounted(() => {
   padding: 0 12px;
   border-radius: 999px;
   border: 1px solid var(--hw-border);
-  background: var(--hw-bg-primary);
+  background: var(--hw-bg-header);
   color: var(--hw-text-secondary);
   font-size: 13px;
 }
@@ -1039,7 +1039,7 @@ onUnmounted(() => {
   padding: 0 18px;
   border-radius: 999px;
   border: 1px solid var(--hw-border);
-  background: var(--hw-bg-primary);
+  background: var(--hw-bg-header);
   color: var(--hw-text-primary);
   cursor: pointer;
   font-weight: 700;
@@ -1067,7 +1067,7 @@ onUnmounted(() => {
 .lyrics-panel {
   margin-top: 20px;
   border: 1px solid var(--hw-border);
-  background: var(--hw-bg-primary);
+  background: var(--hw-bg-header);
   border-radius: 22px;
 }
 
