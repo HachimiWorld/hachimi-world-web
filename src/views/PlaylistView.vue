@@ -402,7 +402,6 @@ onMounted(() => {
 .pv-tab.active {
   background: var(--hw-bg-primary);
   color: var(--theme-color);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 
 .pv-create-btn {

@@ -486,7 +486,7 @@ async function handleCreateCloudPlaylist() {
   gap: 16px;
   padding: 14px 18px;
   border-radius: 24px;
-  border: 1px solid color-mix(in srgb, var(--theme-color) 18%, var(--hw-border));
+  border: 1px solid var(--hw-border);
   background: color-mix(in srgb, var(--hw-bg-header) 92%, var(--hw-bg-primary) 8%);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);

@@ -610,7 +610,6 @@ async function handleReset() {
   background: var(--hw-bg-primary);
   color: var(--theme-color);
   font-weight: 600;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 :root.dark .tab-bar {
