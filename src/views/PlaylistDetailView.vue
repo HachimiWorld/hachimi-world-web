@@ -352,9 +352,14 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
               <span class="pd-song-meta">{{ song.uploader_name }}</span>
             </div>
             <span class="pd-song-duration">{{ formatDuration(song.duration_seconds) }}</span>
-            <button v-if="isOwner" class="pd-song-remove-btn" :disabled="removingSongId === song.song_id" @click="handleRemoveSong(song)">
-              <MdiIcon :path="mdiDeleteOutline" size="18px" />
-            </button>
+            <div class="pd-song-actions">
+              <button class="pd-song-action-btn pd-song-action-btn--play" title="播放" @click.stop="playSong(song)">
+                <MdiIcon :path="mdiPlay" size="17px" />
+              </button>
+              <button v-if="isOwner" class="pd-song-action-btn pd-song-action-btn--remove" :disabled="removingSongId === song.song_id" title="移除歌曲" @click.stop="handleRemoveSong(song)">
+                <MdiIcon :path="mdiDeleteOutline" size="18px" />
+              </button>
+            </div>
           </div>
         </div>
         <div v-else class="pd-empty">
@@ -924,7 +929,14 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
   font-variant-numeric: tabular-nums;
 }
 
-.pd-song-remove-btn {
+.pd-song-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-self: end;
+}
+
+.pd-song-action-btn {
   width: 30px;
   height: 30px;
   border-radius: 8px;
@@ -940,12 +952,24 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
   transition: opacity 0.15s, background 0.15s, color 0.15s;
 }
 
-.pd-song-remove-btn:hover {
+.pd-song-row:hover .pd-song-action-btn {
+  opacity: 1;
+}
+
+.pd-song-action-btn--play:hover {
+  background: var(--theme-color);
+  color: #fff;
+}
+
+.pd-song-action-btn--remove:hover {
   background: color-mix(in srgb, #ef4444 12%, transparent);
   color: #ef4444;
 }
 
-.pd-song-remove-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pd-song-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 
 /* ─── 空状态 ─── */
 .pd-empty {
@@ -1021,6 +1045,10 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
   .pd-creator-link { justify-content: center; }
   .pd-playlist-meta { justify-content: center; }
   .pd-actions { justify-content: center; }
+
+  .pd-song-row:hover .pd-song-action-btn {
+    opacity: 1;
+  }
 
   .pd-song-row {
     grid-template-columns: 24px 40px 1fr 52px auto;
