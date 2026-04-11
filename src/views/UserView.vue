@@ -181,6 +181,11 @@ const bilibiliAccount = computed(() => {
   return null
 })
 
+function openBilibiliProfile() {
+  if (!bilibiliAccount.value?.id) return
+  window.open(`https://space.bilibili.com/${bilibiliAccount.value.id}`, '_blank', 'noopener,noreferrer')
+}
+
 async function loadProfile() {
   profileLoading.value = true
   try {
@@ -380,10 +385,15 @@ onMounted(() => {
                 @click="isOwnProfile ? startEdit('bio') : undefined"
               >{{ getDescription() }}</p>
 
-              <div v-if="bilibiliAccount" class="profile-bilibili-row">
+              <button
+                v-if="bilibiliAccount"
+                class="profile-bilibili-row"
+                type="button"
+                @click="openBilibiliProfile"
+              >
                 <img :src="bilibiliColorUrl" alt="哔哩哔哩" class="profile-bilibili-icon">
                 <span class="profile-bilibili-value">{{ bilibiliAccount.name || `UID ${bilibiliAccount.id}` }}</span>
-              </div>
+              </button>
             </div>
           </div>
         </div>
@@ -699,11 +709,19 @@ onMounted(() => {
 
 .profile-bilibili-row {
   margin-top: 0;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
   font-size: 13px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.profile-bilibili-row:hover .profile-bilibili-value {
+  color: #fb7299;
 }
 
 .profile-bilibili-icon {
