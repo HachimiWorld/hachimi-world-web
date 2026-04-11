@@ -508,7 +508,6 @@ onMounted(() => {
 
 .profile-avatar {
   border: 3px solid color-mix(in srgb, var(--theme-color) 28%, transparent);
-  box-shadow: 0 14px 30px color-mix(in srgb, var(--theme-color) 18%, transparent);
   transition: filter 0.18s ease;
 }
 
