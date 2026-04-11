@@ -21,6 +21,9 @@ import {
   getSongsByUser,
   updateUserProfile,
   setUserAvatar,
+  unlinkConnection,
+  generateConnectionChallenge,
+  verifyConnectionChallenge,
   type Song,
   type UserProfile,
 } from '@/api/song'
@@ -28,7 +31,7 @@ import { type PlaylistItem } from '@/api/playlist'
 import { http } from '@/api/request'
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/user'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 async function fetchPublicPlaylistsByUser(userId: number): Promise<PlaylistItem[]> {
   const authStore = useAuthStore()
@@ -135,6 +138,7 @@ const currentPage = ref(0)
 const pageError = ref('')
 const playlists = ref<PlaylistItem[]>([])
 const playlistsLoading = ref(false)
+const bilibiliActionLoading = ref(false)
 
 function formatCount(n?: number | null) {
   if (!n) return '0'
@@ -184,6 +188,62 @@ const bilibiliAccount = computed(() => {
 function openBilibiliProfile() {
   if (!bilibiliAccount.value?.id) return
   window.open(`https://space.bilibili.com/${bilibiliAccount.value.id}`, '_blank', 'noopener,noreferrer')
+}
+
+async function handleBindBilibili() {
+  try {
+    const { value } = await ElMessageBox.prompt('请输入要绑定的哔哩哔哩 UID', '绑定哔哩哔哩账号', {
+      confirmButtonText: '下一步',
+      cancelButtonText: '取消',
+      inputPlaceholder: 'UID',
+      inputPattern: /^\d+$/,
+      inputErrorMessage: '请输入纯数字 UID',
+    })
+
+    const providerAccountId = value.trim()
+    if (!providerAccountId) return
+
+    bilibiliActionLoading.value = true
+    const challenge = await generateConnectionChallenge('bilibili', providerAccountId)
+
+    await ElMessageBox.alert(
+      `请前往哔哩哔哩个人主页，将签名修改为以「${challenge.challenge}」结尾，然后点击确定继续校验。`,
+      `验证账号：${challenge.provider_account_name}`,
+      {
+        confirmButtonText: '我已完成，开始校验',
+        dangerouslyUseHTMLString: false,
+      },
+    )
+
+    await verifyConnectionChallenge(challenge.challenge_id)
+    ElMessage.success('哔哩哔哩账号绑定成功')
+    await loadProfile()
+  } catch (e) {
+    if (e === 'cancel' || e === 'close') return
+    ElMessage.error(e instanceof ApiError ? e.msg : '绑定失败')
+  } finally {
+    bilibiliActionLoading.value = false
+  }
+}
+
+async function handleUnbindBilibili() {
+  try {
+    await ElMessageBox.confirm('确定要解除当前绑定的哔哩哔哩账号吗？', '解绑哔哩哔哩账号', {
+      confirmButtonText: '解绑',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+
+    bilibiliActionLoading.value = true
+    await unlinkConnection('bilibili')
+    ElMessage.success('已解除哔哩哔哩绑定')
+    await loadProfile()
+  } catch (e) {
+    if (e === 'cancel' || e === 'close') return
+    ElMessage.error(e instanceof ApiError ? e.msg : '解绑失败')
+  } finally {
+    bilibiliActionLoading.value = false
+  }
 }
 
 async function loadProfile() {
@@ -385,15 +445,27 @@ onMounted(() => {
                 @click="isOwnProfile ? startEdit('bio') : undefined"
               >{{ getDescription() }}</p>
 
-              <button
-                v-if="bilibiliAccount"
-                class="profile-bilibili-row"
-                type="button"
-                @click="openBilibiliProfile"
-              >
-                <img :src="bilibiliColorUrl" alt="哔哩哔哩" class="profile-bilibili-icon">
-                <span class="profile-bilibili-value">{{ bilibiliAccount.name || `UID ${bilibiliAccount.id}` }}</span>
-              </button>
+              <div class="profile-bilibili-section">
+                <button
+                  v-if="bilibiliAccount"
+                  class="profile-bilibili-row"
+                  type="button"
+                  @click="openBilibiliProfile"
+                >
+                  <img :src="bilibiliColorUrl" alt="哔哩哔哩" class="profile-bilibili-icon">
+                  <span class="profile-bilibili-value">{{ bilibiliAccount.name || `UID ${bilibiliAccount.id}` }}</span>
+                </button>
+
+                <button
+                  v-if="isOwnProfile"
+                  class="profile-bilibili-action"
+                  type="button"
+                  :disabled="bilibiliActionLoading"
+                  @click="bilibiliAccount ? handleUnbindBilibili() : handleBindBilibili()"
+                >
+                  {{ bilibiliActionLoading ? '处理中…' : (bilibiliAccount ? '解绑哔哩哔哩' : '绑定哔哩哔哩') }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -707,6 +779,14 @@ onMounted(() => {
   color: var(--hw-text-secondary);
 }
 
+.profile-bilibili-section {
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .profile-bilibili-row {
   margin-top: 0;
   display: inline-flex;
@@ -718,6 +798,34 @@ onMounted(() => {
   border: none;
   background: transparent;
   cursor: pointer;
+}
+
+.profile-bilibili-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, #fb7299 30%, var(--hw-border));
+  background: color-mix(in srgb, #fb7299 12%, var(--hw-bg-primary));
+  color: #fb7299;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.profile-bilibili-action:hover {
+  background: color-mix(in srgb, #fb7299 18%, var(--hw-bg-hover));
+  border-color: color-mix(in srgb, #fb7299 55%, var(--hw-border));
+  transform: translateY(-1px);
+}
+
+.profile-bilibili-action:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .profile-bilibili-row:hover .profile-bilibili-value {

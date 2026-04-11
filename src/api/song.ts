@@ -21,10 +21,17 @@ export interface UserProfile {
   is_banned?: boolean
 }
 
-export interface SongTag {
-  id: number
+export interface ConnectionItem {
+  type: string
+  id: string
   name: string
-  description: string | null
+  public: boolean
+}
+
+export interface GenerateConnectionChallengeResp {
+  challenge_id: string
+  challenge: string
+  provider_account_name: string
 }
 
 export interface SongProductionCrew {
@@ -268,6 +275,29 @@ export async function setUserAvatar(file: File): Promise<void> {
   })
   const json = await res.json()
   if (!json.ok) throw new (await import('./request')).ApiError(json.data.code, json.data.msg)
+}
+
+export async function listMyConnections(): Promise<{ items: ConnectionItem[] }> {
+  const token = await getToken()
+  return http.get<{ items: ConnectionItem[] }>('/user/connection/list', token)
+}
+
+export async function unlinkConnection(type: string): Promise<void> {
+  const token = await getToken()
+  return http.post<void>('/user/connection/unlink', { type }, token)
+}
+
+export async function generateConnectionChallenge(type: string, providerAccountId: string): Promise<GenerateConnectionChallengeResp> {
+  const token = await getToken()
+  return http.post<GenerateConnectionChallengeResp>('/user/connection/generate_challenge', {
+    type,
+    provider_account_id: providerAccountId,
+  }, token)
+}
+
+export async function verifyConnectionChallenge(challengeId: string): Promise<void> {
+  const token = await getToken()
+  return http.post<void>('/user/connection/verify_challenge', { challenge_id: challengeId }, token)
 }
 
 // ── 发布模块 ──
