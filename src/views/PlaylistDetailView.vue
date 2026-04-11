@@ -7,6 +7,7 @@ import {
   mdiAlertCircleOutline,
   mdiDeleteOutline,
   mdiHeartOutline,
+  mdiImageOutline,
   mdiInformationOutline,
   mdiMenu,
   mdiPencil,
@@ -262,7 +263,10 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
               <div class="pd-song-meta-skeleton"></div>
             </div>
             <div class="pd-song-duration-skeleton"></div>
-            <div class="pd-song-remove-skeleton"></div>
+            <div class="pd-song-actions-skeleton">
+              <div class="pd-song-action-skeleton"></div>
+              <div class="pd-song-action-skeleton"></div>
+            </div>
           </div>
         </div>
       </section>
@@ -281,7 +285,7 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
         <div class="pd-cover-wrap">
           <div class="pd-cover-box">
             <img v-if="coverUrl" :src="coverUrl" :alt="detail.playlist_info.name" class="pd-cover-img" />
-            <div v-else class="pd-cover-fallback"><MdiIcon :path="mdiAccount" size="30px" /></div>
+            <div v-else class="pd-cover-fallback"><MdiIcon :path="mdiImageOutline" size="30px" /></div>
           </div>
           <button v-if="isOwner" class="pd-cover-upload-btn" :class="{ uploading: coverUploading }" @click="triggerCoverUpload">
             <MdiIcon :path="mdiUpload" size="18px" />
@@ -604,7 +608,14 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
   border-radius: 999px;
 }
 
-.pd-song-remove-skeleton {
+.pd-song-actions-skeleton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-self: end;
+}
+
+.pd-song-action-skeleton {
   width: 30px;
   height: 30px;
   border-radius: 8px;
@@ -671,7 +682,7 @@ function goToUser(uid: number) { router.push(`/user/${uid}`) }
   padding: 6px 14px;
   border-radius: 999px;
   border: 1px solid var(--hw-border);
-  background: transparent;
+  background: var(--hw-bg-header);
   color: var(--hw-text-secondary);
   font-size: 12px;
   cursor: pointer;
