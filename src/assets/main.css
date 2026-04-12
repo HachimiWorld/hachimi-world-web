@@ -280,14 +280,18 @@ button {
   color: var(--hw-text-primary);
 }
 
-/* ===== Dialog / MessageBox 关闭按钮悬浮主题色 ===== */
-.el-dialog__headerbtn:hover .el-dialog__close,
-.el-dialog__headerbtn:hover .el-dialog__close svg,
-.el-dialog__headerbtn:focus-visible .el-dialog__close,
-.el-dialog__headerbtn:focus-visible .el-dialog__close svg {
-  color: var(--theme-color) !important;
-  fill: currentColor !important;
+/* ===== Mobile Sidebar Drawer 修复 ===== */
+.mobile-sidebar-drawer,
+.mobile-sidebar-drawer .el-drawer,
+.mobile-sidebar-drawer .el-drawer__body {
+  background: var(--hw-bg-secondary) !important;
 }
+
+.mobile-sidebar-drawer .el-drawer__body {
+  padding: 20px !important;
+  box-sizing: border-box;
+}
+
 
 .el-message-box__headerbtn:hover .el-message-box__close,
 .el-message-box__headerbtn:hover .el-message-box__close svg,

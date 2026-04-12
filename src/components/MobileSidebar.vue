@@ -46,6 +46,7 @@ function isActive(path: string) {
     :with-header="false"
     size="240px"
     class="mobile-sidebar-drawer"
+    modal-class="mobile-sidebar-overlay"
   >
     <div class="sidebar-content">
       <div class="sidebar-logo">
@@ -72,6 +73,7 @@ function isActive(path: string) {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 100%;
   padding: 0;
   background: var(--hw-bg-secondary);
 }
