@@ -1,0 +1,4 @@
+# Cloudflare Pages response headers. Legacy web app; hachimi.world is the indexed site.
+# No Disallow in robots.txt: crawlers must be able to fetch pages to see the noindex.
+/*
+  X-Robots-Tag: noindex
