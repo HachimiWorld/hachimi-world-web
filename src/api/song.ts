@@ -19,6 +19,10 @@ export interface UserProfile {
   bilibili_name?: string | null
   connected_accounts?: ConnectedAccount[]
   is_banned?: boolean
+  follower_count?: number
+  following_count?: number
+  is_following?: boolean | null
+  is_followed_by?: boolean | null
 }
 
 export interface ConnectionItem {
@@ -199,8 +203,9 @@ export function getSongsByTag(params: {
   return http.get<SearchSongsResp>(`/song/search?${query.toString()}`)
 }
 
-export function getUserProfile(uid: number): Promise<UserProfile> {
-  return http.get<UserProfile>(`/user/profile?uid=${uid}`)
+export async function getUserProfile(uid: number): Promise<UserProfile> {
+  const token = await getToken()
+  return http.get<UserProfile>(`/user/profile?uid=${uid}`, token)
 }
 
 export interface UserSongsPageResp {

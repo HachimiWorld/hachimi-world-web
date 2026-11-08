@@ -29,8 +29,10 @@ import {
 } from '@/api/song'
 import { type PlaylistItem } from '@/api/playlist'
 import { http } from '@/api/request'
+import { followErrorMessage, followUser, unfollowUser } from '@/api/follow'
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/user'
+import LoginDialog from '@/components/LoginDialog.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 async function fetchPublicPlaylistsByUser(userId: number): Promise<PlaylistItem[]> {
@@ -139,6 +141,15 @@ const pageError = ref('')
 const playlists = ref<PlaylistItem[]>([])
 const playlistsLoading = ref(false)
 const bilibiliActionLoading = ref(false)
+const followLoading = ref(false)
+const loginDialogOpen = ref(false)
+
+const isFollowing = computed(() => profile.value?.is_following === true)
+const followButtonLabel = computed(() => {
+  if (!isFollowing.value) return '关注'
+  if (profile.value?.is_followed_by) return '互相关注'
+  return '已关注'
+})
 
 function formatCount(n?: number | null) {
   if (!n) return '0'
@@ -256,6 +267,78 @@ async function loadProfile() {
     profile.value = null
   } finally {
     profileLoading.value = false
+  }
+}
+
+function openFollowers() {
+  if (!isOwnProfile.value) return
+  router.push('/followers')
+}
+
+function openFollowing() {
+  if (!isOwnProfile.value) return
+  router.push('/feed')
+}
+
+async function handleFollow() {
+  if (!profile.value || isOwnProfile.value || followLoading.value) return
+  if (!userStore.isLoggedIn) {
+    loginDialogOpen.value = true
+    return
+  }
+  followLoading.value = true
+  try {
+    const resp = await followUser(profile.value.uid)
+    profile.value = {
+      ...profile.value,
+      is_following: true,
+      follower_count: resp.follower_count,
+    }
+    ElMessage.success('已关注')
+  } catch (e) {
+    ElMessage.error(
+      e instanceof ApiError
+        ? (followErrorMessage(e.code) || e.msg)
+        : '关注失败',
+    )
+  } finally {
+    followLoading.value = false
+  }
+}
+
+async function handleUnfollow() {
+  if (!profile.value || isOwnProfile.value || followLoading.value) return
+  try {
+    await ElMessageBox.confirm(
+      '该用户将从你的关注列表中移除',
+      `确定不再关注 ${profile.value.username}？`,
+      {
+        confirmButtonText: '不再关注',
+        cancelButtonText: '取消',
+        type: 'warning',
+      },
+    )
+  } catch {
+    return
+  }
+
+  followLoading.value = true
+  try {
+    const resp = await unfollowUser(profile.value.uid)
+    profile.value = {
+      ...profile.value,
+      is_following: false,
+      follower_count: resp.follower_count,
+    }
+    ElMessage.success('已取消关注')
+  } catch (e) {
+    ElMessage.error(
+      e instanceof ApiError
+        ? (followErrorMessage(e.code) || e.msg)
+        : '取消关注失败',
+    )
+  } finally {
+    followLoading.value = false
   }
 }
 
@@ -466,6 +549,42 @@ onMounted(() => {
                   {{ bilibiliActionLoading ? '处理中…' : (bilibiliAccount ? '解绑哔哩哔哩' : '绑定哔哩哔哩') }}
                 </button>
               </div>
+
+              <div class="follow-stats-row">
+                <div class="follow-stats">
+                  <button
+                    type="button"
+                    class="stat-item"
+                    :class="{ clickable: isOwnProfile }"
+                    :disabled="!isOwnProfile"
+                    @click="openFollowers"
+                  >
+                    <strong>{{ formatCount(profile.follower_count) }}</strong>
+                    <span>粉丝</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="stat-item"
+                    :class="{ clickable: isOwnProfile }"
+                    :disabled="!isOwnProfile"
+                    @click="openFollowing"
+                  >
+                    <strong>{{ formatCount(profile.following_count) }}</strong>
+                    <span>关注</span>
+                  </button>
+                </div>
+
+                <button
+                  v-if="!isOwnProfile"
+                  type="button"
+                  class="follow-action-btn"
+                  :class="{ following: isFollowing }"
+                  :disabled="followLoading"
+                  @click="isFollowing ? handleUnfollow() : handleFollow()"
+                >
+                  {{ followLoading ? '处理中…' : followButtonLabel }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -569,6 +688,11 @@ onMounted(() => {
         </div>
       </section>
     </div>
+
+    <LoginDialog
+      :model-value="loginDialogOpen"
+      @update:model-value="(open) => { loginDialogOpen = open; if (!open && userStore.isLoggedIn) loadProfile() }"
+    />
   </div>
 </template>
 
@@ -842,6 +966,91 @@ onMounted(() => {
 .profile-bilibili-value {
   color: var(--hw-text-primary);
   font-weight: 600;
+}
+
+.follow-stats-row {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.follow-stats {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: var(--hw-text-primary);
+  cursor: default;
+}
+
+.stat-item.clickable {
+  cursor: pointer;
+}
+
+.stat-item.clickable:hover strong {
+  color: var(--theme-color);
+}
+
+.stat-item:disabled {
+  cursor: default;
+}
+
+.stat-item strong {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.stat-item span {
+  font-size: 12px;
+  color: var(--hw-text-secondary);
+}
+
+.follow-action-btn {
+  min-width: 88px;
+  min-height: 36px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  border: none;
+  background: var(--theme-color);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.follow-action-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--theme-color) 88%, #000);
+}
+
+.follow-action-btn.following {
+  background: transparent;
+  border: 1px solid var(--hw-border);
+  color: var(--hw-text-secondary);
+  font-weight: 500;
+}
+
+.follow-action-btn.following:hover:not(:disabled) {
+  border-color: var(--theme-color);
+  color: var(--theme-color);
+  background: var(--theme-color-light);
+}
+
+.follow-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .works-panel {
