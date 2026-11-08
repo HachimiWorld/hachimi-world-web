@@ -39,6 +39,8 @@ const props = defineProps<{
   targetId: number
   ownerUid: number
   targetType?: string
+  /** 隐藏顶部「评论 N」标题（进入回复楼时仍保留返回） */
+  hideHeader?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -437,7 +439,7 @@ defineExpose({ reload: () => load() })
 
 <template>
   <section class="song-comments">
-    <header class="comments-header">
+    <header v-if="!hideHeader || openThread" class="comments-header">
       <button
         v-if="openThread"
         type="button"
@@ -739,7 +741,7 @@ defineExpose({ reload: () => load() })
 <style scoped>
 .song-comments {
   margin-top: 28px;
-  padding: 20px 0 8px;
+  padding: 0 0 8px;
   border-top: 1px solid var(--hw-border);
   width: 100%;
 }

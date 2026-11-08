@@ -31,6 +31,7 @@ const searchQuery = ref(typeof route.query.q === 'string' ? route.query.q : '')
 
 const navItems = [
   { label: '首页', path: '/' },
+  { label: '广场', path: '/square' },
   { label: '点赞', path: '/upvote' },
   { label: '历史', path: '/history' },
   { label: '歌单', path: '/playlist' },

@@ -10,10 +10,21 @@ const router = createRouter({
       component: HomeView,
     },
     {
+      path: '/square',
+      name: 'square',
+      component: () => import('../views/SquareView.vue'),
+    },
+    {
+      path: '/square/:id',
+      name: 'moment-detail',
+      component: () => import('../views/MomentDetailView.vue'),
+    },
+    {
       path: '/search',
       name: 'search',
       component: () => import('../views/SearchView.vue'),
     },
+
     {
       path: '/upvote',
       name: 'upvote',

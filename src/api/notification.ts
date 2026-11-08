@@ -81,6 +81,8 @@ export function notificationActionLabel(action?: string | null): string | null {
     case 'post.comment.view':
     case 'moment.comment.view':
       return '查看评论'
+    case 'moment.view':
+      return '查看动态'
     default:
       return null
   }
@@ -121,6 +123,11 @@ export function notificationIntentPath(intent: ContentIntent | null | undefined)
       if (songId != null) return `/song/${songId}`
       if (displayId) return `/song/${encodeURIComponent(displayId)}`
       return null
+    }
+    case 'moment.view':
+    case 'moment.comment.view': {
+      const id = num('moment_id')
+      return id != null ? `/square/${id}` : null
     }
     default:
       return null
