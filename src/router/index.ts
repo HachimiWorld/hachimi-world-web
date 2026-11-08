@@ -15,10 +15,20 @@ const router = createRouter({
       component: () => import('../views/SquareView.vue'),
     },
     {
-      path: '/square/:id',
+      path: '/square/moment/:id',
       name: 'moment-detail',
       component: () => import('../views/MomentDetailView.vue'),
     },
+    {
+      path: '/square/event/:id',
+      name: 'event-detail',
+      component: () => import('../views/EventDetailView.vue'),
+    },
+    {
+      path: '/square/:id(\\d+)',
+      redirect: (to) => `/square/moment/${to.params.id}`,
+    },
+
     {
       path: '/search',
       name: 'search',

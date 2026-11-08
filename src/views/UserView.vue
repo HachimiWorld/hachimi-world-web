@@ -13,8 +13,16 @@ import {
 import MdiIcon from '@/components/icons/MdiIcon.vue'
 import bilibiliColorUrl from '@/assets/bilibili-color.svg'
 import SongCard from '@/components/SongCard.vue'
+import MomentCard from '@/components/MomentCard.vue'
 import LoginDialog from '@/components/LoginDialog.vue'
 import { ApiError, http } from '@/api/request'
+import {
+  likeMoment,
+  listMomentsByUser,
+  momentErrorMessage,
+  unlikeMoment,
+  type MomentItem,
+} from '@/api/moment'
 import {
   getUserProfile,
   getSongsByUser,
@@ -67,6 +75,14 @@ const currentPage = ref(0)
 const pageError = ref('')
 const playlists = ref<PlaylistItem[]>([])
 const playlistsLoading = ref(false)
+const moments = ref<MomentItem[]>([])
+const momentsLoading = ref(false)
+const momentsLoadingMore = ref(false)
+const momentsCursor = ref<string | null>(null)
+const momentsHasMore = ref(false)
+const momentsError = ref('')
+const momentsLoadedUid = ref<number | null>(null)
+const momentActionId = ref<number | null>(null)
 const followLoading = ref(false)
 const loginDialogOpen = ref(false)
 
@@ -350,6 +366,82 @@ async function loadPlaylists() {
   }
 }
 
+async function loadMomentsInitial() {
+  if (!Number.isFinite(uid.value) || uid.value <= 0) return
+  momentsLoading.value = true
+  momentsError.value = ''
+  momentsCursor.value = null
+  momentsHasMore.value = false
+  try {
+    const resp = await listMomentsByUser({ userId: uid.value, limit: 20 })
+    moments.value = resp.items
+    momentsCursor.value = resp.next_cursor
+    momentsHasMore.value = Boolean(resp.next_cursor)
+    momentsLoadedUid.value = uid.value
+  } catch (e) {
+    moments.value = []
+    momentsError.value =
+      e instanceof ApiError ? (momentErrorMessage(e.code) || e.msg) : '加载动态失败'
+    momentsLoadedUid.value = uid.value
+  } finally {
+    momentsLoading.value = false
+  }
+}
+
+async function loadMomentsMore() {
+  if (!momentsHasMore.value || momentsLoadingMore.value || !momentsCursor.value) return
+  momentsLoadingMore.value = true
+  try {
+    const resp = await listMomentsByUser({
+      userId: uid.value,
+      cursor: momentsCursor.value,
+      limit: 20,
+    })
+    moments.value = [...moments.value, ...resp.items]
+    momentsCursor.value = resp.next_cursor
+    momentsHasMore.value = Boolean(resp.next_cursor)
+  } catch (e) {
+    ElMessage.error(
+      e instanceof ApiError ? (momentErrorMessage(e.code) || e.msg) : '加载更多失败',
+    )
+  } finally {
+    momentsLoadingMore.value = false
+  }
+}
+
+function ensureMomentsLoaded() {
+  if (momentsLoadedUid.value === uid.value) return
+  void loadMomentsInitial()
+}
+
+function openMoment(item: MomentItem) {
+  router.push(`/square/moment/${item.id}`)
+}
+
+async function toggleMomentLike(item: MomentItem) {
+  if (!userStore.isLoggedIn) {
+    loginDialogOpen.value = true
+    return
+  }
+  if (momentActionId.value === item.id) return
+  momentActionId.value = item.id
+  const liked = item.liked
+  item.liked = !liked
+  item.like_count += liked ? -1 : 1
+  try {
+    if (liked) await unlikeMoment(item.id)
+    else await likeMoment(item.id)
+  } catch (e) {
+    item.liked = liked
+    item.like_count += liked ? 1 : -1
+    ElMessage.error(
+      e instanceof ApiError ? (momentErrorMessage(e.code) || e.msg) : '操作失败',
+    )
+  } finally {
+    momentActionId.value = null
+  }
+}
+
 async function loadPage() {
   if (!Number.isFinite(uid.value) || uid.value <= 0) {
     pageError.value = '用户 ID 无效'
@@ -365,6 +457,11 @@ async function loadPage() {
   totalSongs.value = 0
   currentPage.value = 0
   playlists.value = []
+  moments.value = []
+  momentsCursor.value = null
+  momentsHasMore.value = false
+  momentsError.value = ''
+  momentsLoadedUid.value = null
   await Promise.all([loadProfile(), loadSongs(0), loadPlaylists()])
 }
 
@@ -388,6 +485,10 @@ async function playAll() {
 
 watch(uid, () => {
   void loadPage()
+})
+
+watch(activeTab, (tab) => {
+  if (tab === 'activity') ensureMomentsLoaded()
 })
 
 onMounted(() => {
@@ -551,7 +652,7 @@ onMounted(() => {
             type="button"
             class="tab"
             :class="{ active: activeTab === 'activity' }"
-            @click="activeTab = 'activity'"
+            @click="activeTab = 'activity'; ensureMomentsLoaded()"
           >动态</button>
         </div>
 
@@ -619,8 +720,39 @@ onMounted(() => {
 
         <!-- 动态 -->
         <div v-else class="tab-panel">
-          <div class="state-block compact">
-            <p>即将推出</p>
+          <div v-if="momentsLoading" class="state-block compact">
+            <div class="loading-dot" />
+          </div>
+          <div v-else-if="momentsError" class="state-block compact">
+            <p>{{ momentsError }}</p>
+            <button type="button" class="retry-link" @click="loadMomentsInitial">重试</button>
+          </div>
+          <template v-else-if="moments.length">
+            <div class="moment-list">
+              <MomentCard
+                v-for="item in moments"
+                :key="item.id"
+                :moment="item"
+                compact
+                @open="openMoment(item)"
+                @like="toggleMomentLike(item)"
+                @unlike="toggleMomentLike(item)"
+                @require-login="loginDialogOpen = true"
+              />
+            </div>
+            <div v-if="momentsHasMore" class="moment-tail">
+              <button
+                type="button"
+                class="load-more-btn"
+                :disabled="momentsLoadingMore"
+                @click="loadMomentsMore"
+              >
+                {{ momentsLoadingMore ? '加载中…' : '加载更多' }}
+              </button>
+            </div>
+          </template>
+          <div v-else class="state-block compact">
+            <p>什么也没有</p>
           </div>
         </div>
       </template>
@@ -1075,6 +1207,47 @@ onMounted(() => {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+.moment-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  max-width: 100%;
+}
+
+@media (min-width: 768px) and (orientation: landscape),
+       (min-width: 900px) {
+  .moment-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.moment-tail {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 4px;
+}
+
+.load-more-btn,
+.retry-link {
+  border: none;
+  border-radius: 12px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--theme-color);
+}
+
+.load-more-btn:hover,
+.retry-link:hover {
+  background: var(--theme-color-light);
+}
+
+.load-more-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .edit-form {

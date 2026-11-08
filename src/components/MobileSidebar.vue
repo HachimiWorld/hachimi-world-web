@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
-import { mdiAccountPlus, mdiCog, mdiHeartOutline, mdiHistory, mdiHome, mdiNewspaperVariantOutline, mdiPencil, mdiPlaylistMusic } from '@mdi/js'
+import { mdiAccountPlus, mdiCog, mdiHeartOutline, mdiHistory, mdiHome, mdiNewspaper, mdiPencil, mdiPlaylistMusic } from '@mdi/js'
 import MdiIcon from '@/components/icons/MdiIcon.vue'
 import lightLogoUrl from '@/assets/logo-light.svg'
 import darkLogoUrl from '@/assets/logo-dark.svg'
@@ -19,7 +19,7 @@ const currentLogoUrl = computed(() => (themeStore.isDark ? darkLogoUrl : lightLo
 
 const navItems = [
   { label: '首页', path: '/', icon: mdiHome },
-  { label: '广场', path: '/square', icon: mdiNewspaperVariantOutline },
+  { label: '广场', path: '/square', icon: mdiNewspaper },
   { label: '点赞', path: '/upvote', icon: mdiHeartOutline },
   { label: '历史', path: '/history', icon: mdiHistory },
   { label: '歌单', path: '/playlist', icon: mdiPlaylistMusic },

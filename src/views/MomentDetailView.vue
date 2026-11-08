@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { mdiArrowLeft, mdiDeleteOutline, mdiNewspaperVariantOutline } from '@mdi/js'
+import { mdiArrowLeft, mdiDeleteOutline, mdiNewspaper } from '@mdi/js'
 import MdiIcon from '@/components/icons/MdiIcon.vue'
 import MomentCard from '@/components/MomentCard.vue'
 import SongCommentsSection from '@/components/SongCommentsSection.vue'
@@ -95,7 +95,7 @@ async function onDelete() {
   try {
     await deleteMoment(item.value.id)
     ElMessage.success('已删除')
-    router.replace('/square')
+    router.replace({ path: '/square' })
   } catch (e) {
     ElMessage.error(apiMessage(e, '删除失败'))
   }
@@ -119,7 +119,7 @@ onMounted(() => {
   <div class="moment-page">
     <div class="moment-shell">
       <div class="moment-hero">
-        <button type="button" class="back-btn" aria-label="返回" @click="router.push('/square')">
+        <button type="button" class="back-btn" aria-label="返回" @click="router.push({ path: '/square', query: {} })">
           <MdiIcon :path="mdiArrowLeft" size="20px" />
         </button>
         <h1 class="hero-title">动态</h1>
@@ -139,7 +139,7 @@ onMounted(() => {
       </div>
 
       <div v-else-if="errorText" class="state-card">
-        <MdiIcon :path="mdiNewspaperVariantOutline" size="22px" />
+        <MdiIcon :path="mdiNewspaper" size="22px" />
         <p>{{ errorText }}</p>
         <button type="button" class="retry-btn" @click="load">重试</button>
       </div>

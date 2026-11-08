@@ -127,7 +127,11 @@ export function notificationIntentPath(intent: ContentIntent | null | undefined)
     case 'moment.view':
     case 'moment.comment.view': {
       const id = num('moment_id')
-      return id != null ? `/square/${id}` : null
+      return id != null ? `/square/moment/${id}` : null
+    }
+    case 'post.comment.view': {
+      const id = num('post_id')
+      return id != null ? `/square/event/${id}` : null
     }
     default:
       return null
