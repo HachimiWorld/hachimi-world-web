@@ -1,23 +1,28 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/user'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import {
   mdiAccount,
+  mdiDevices,
+  mdiEmailOutline,
   mdiInformationOutline,
   mdiLaptop,
   mdiLogout,
   mdiMoonWaningCrescent,
   mdiPaletteOutline,
   mdiRestore,
+  mdiShieldKeyOutline,
   mdiWeatherSunny,
 } from '@mdi/js'
 import MdiIcon from '@/components/icons/MdiIcon.vue'
 import LoginDialog from '@/components/LoginDialog.vue'
 import { http } from '@/api/request'
 
+const router = useRouter()
 const themeStore = useThemeStore()
 const authStore = useAuthStore()
 const userStore = useUserStore()
@@ -235,11 +240,47 @@ onMounted(async () => {
 
           <div class="setting-row">
             <div class="setting-info">
-              <span class="setting-name">登录设备</span>
+              <span class="setting-name">本机设备名</span>
               <span class="setting-desc">{{ deviceName }}</span>
             </div>
             <div class="device-tag">
               <MdiIcon :path="mdiLaptop" size="18px" />
+            </div>
+          </div>
+
+          <div class="row-divider" />
+
+          <button type="button" class="setting-row nav-row" @click="router.push('/settings/devices')">
+            <div class="setting-info">
+              <span class="setting-name">设备管理</span>
+              <span class="setting-desc">查看已登录设备，踢下线其他会话</span>
+            </div>
+            <div class="user-badge">
+              <MdiIcon :path="mdiDevices" size="18px" />
+            </div>
+          </button>
+
+          <div class="row-divider" />
+
+          <button type="button" class="setting-row nav-row" @click="router.push('/settings/email')">
+            <div class="setting-info">
+              <span class="setting-name">更换邮箱</span>
+              <span class="setting-desc">通过原邮箱或密码验证更换绑定邮箱</span>
+            </div>
+            <div class="user-badge">
+              <MdiIcon :path="mdiEmailOutline" size="18px" />
+            </div>
+          </button>
+
+          <div class="row-divider" />
+
+          <div class="setting-row disabled-row">
+            <div class="setting-info">
+              <span class="setting-name">双重验证（2FA）</span>
+              <span class="setting-desc">尚未开放，敬请期待</span>
+            </div>
+            <div class="user-badge">
+              <MdiIcon :path="mdiShieldKeyOutline" size="18px" />
             </div>
           </div>
 
@@ -392,6 +433,24 @@ onMounted(async () => {
   justify-content: space-between;
   gap: 16px;
   padding: 16px 20px;
+}
+
+.setting-row.nav-row {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.setting-row.nav-row:hover {
+  background: var(--hw-bg-hover);
+}
+
+.setting-row.disabled-row {
+  opacity: 0.72;
 }
 
 .row-divider {

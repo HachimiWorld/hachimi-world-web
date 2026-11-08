@@ -102,6 +102,22 @@ const router = createRouter({
       component: () => import('../views/SettingsView.vue'),
     },
     {
+      path: '/settings/devices',
+      name: 'settings-devices',
+      component: () => import('../views/DeviceManagementView.vue'),
+    },
+    {
+      path: '/settings/email',
+      name: 'settings-email',
+      component: () => import('../views/ChangeEmailView.vue'),
+    },
+    {
+      path: '/account/revert-email',
+      name: 'revert-email',
+      component: () => import('../views/RevertEmailView.vue'),
+    },
+
+    {
       path: '/user/:uid',
       name: 'user',
       component: () => import('../views/UserView.vue'),
