@@ -517,7 +517,7 @@ onMounted(() => {
 
 .tab-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 14px;
   margin-top: 18px;
@@ -525,11 +525,43 @@ onMounted(() => {
 
 .tab-group {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  align-items: stretch;
+  gap: 4px;
+  height: 42px;
+  box-sizing: border-box;
+  background: var(--hw-bg-secondary);
+  border: 1px solid var(--hw-border);
+  border-radius: 14px;
+  padding: 4px;
 }
 
-.tab-btn,
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--hw-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tab-btn:hover {
+  color: var(--hw-text-primary);
+}
+
+.tab-btn.active {
+  background: var(--hw-bg-primary);
+  color: var(--theme-color);
+}
+
 .sort-trigger,
 .sort-option {
   display: inline-flex;
@@ -547,14 +579,12 @@ onMounted(() => {
   transition: all 0.18s ease;
 }
 
-.tab-btn:hover,
 .sort-trigger:hover,
 .sort-option:hover {
   color: var(--hw-text-primary);
   border-color: var(--theme-color);
 }
 
-.tab-btn.active,
 .sort-option.active {
   background: var(--theme-color);
   border-color: var(--theme-color);
