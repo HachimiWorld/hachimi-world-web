@@ -2,37 +2,37 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  mdiAccount,
   mdiAlertCircleOutline,
-  mdiCheck,
-  mdiClose,
-  mdiHeadphones,
-  mdiPencil,
-  mdiPlaylistMusic,
   mdiGenderFemale,
   mdiGenderMale,
+  mdiOpenInNew,
+  mdiPencil,
+  mdiPlay,
+  mdiPlaylistMusic,
 } from '@mdi/js'
 import MdiIcon from '@/components/icons/MdiIcon.vue'
 import bilibiliColorUrl from '@/assets/bilibili-color.svg'
 import SongCard from '@/components/SongCard.vue'
-import { ApiError } from '@/api/request'
+import LoginDialog from '@/components/LoginDialog.vue'
+import { ApiError, http } from '@/api/request'
 import {
   getUserProfile,
   getSongsByUser,
   updateUserProfile,
   setUserAvatar,
+  listMyConnections,
   unlinkConnection,
   generateConnectionChallenge,
   verifyConnectionChallenge,
+  type ConnectionItem,
   type Song,
   type UserProfile,
 } from '@/api/song'
 import { type PlaylistItem } from '@/api/playlist'
-import { http } from '@/api/request'
 import { followErrorMessage, followUser, unfollowUser } from '@/api/follow'
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/user'
-import LoginDialog from '@/components/LoginDialog.vue'
+import { usePlayerStore } from '@/stores/player'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 async function fetchPublicPlaylistsByUser(userId: number): Promise<PlaylistItem[]> {
@@ -49,88 +49,15 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const userStore = useUserStore()
+const playerStore = usePlayerStore()
 
 const PAGE_SIZE = 12
+type TabKey = 'songs' | 'playlists' | 'activity'
 
 const uid = computed(() => Number(route.params.uid))
 const isOwnProfile = computed(() => userStore.isLoggedIn && userStore.userInfo?.uid === uid.value)
 
-// ── 头像上传 ──
-const avatarInputRef = ref<HTMLInputElement | null>(null)
-const avatarUploading = ref(false)
-
-function triggerAvatarUpload() {
-  if (!isOwnProfile.value) return
-  avatarInputRef.value?.click()
-}
-
-async function onAvatarSelected(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  if (file.size > 8 * 1024 * 1024) { ElMessage.error('图片不能超过 8MB'); return }
-  avatarUploading.value = true
-  try {
-    await setUserAvatar(file)
-    ElMessage.success('头像已更新')
-    await loadProfile()
-    // loadProfile 完成后同步 userStore 头像，AppHeader 自动响应
-    if (userStore.userInfo && profile.value?.avatar_url !== undefined) {
-      const newAvatarUrl = profile.value.avatar_url
-      userStore.userInfo = { ...userStore.userInfo, avatar_url: newAvatarUrl }
-      // 同步持久化到 localStorage，刷新后 restoreSession 仍能读到正确头像
-      if (newAvatarUrl) {
-        localStorage.setItem('hachimi_avatar_url', newAvatarUrl)
-      } else {
-        localStorage.removeItem('hachimi_avatar_url')
-      }
-    }
-  } catch (e) {
-    ElMessage.error(e instanceof ApiError ? e.msg : '上传失败')
-  } finally {
-    avatarUploading.value = false
-    if (avatarInputRef.value) avatarInputRef.value.value = ''
-  }
-}
-
-// ── 行内编辑 ──
-const editingField = ref<'username' | 'bio' | 'gender' | null>(null)
-const editValue = ref('')
-const editLoading = ref(false)
-
-function startEdit(field: 'username' | 'bio' | 'gender') {
-  if (!isOwnProfile.value) return
-  editingField.value = field
-  if (field === 'username') editValue.value = profile.value?.username ?? ''
-  else if (field === 'bio') editValue.value = profile.value?.bio ?? ''
-  else if (field === 'gender') editValue.value = String(profile.value?.gender ?? '')
-}
-
-function cancelEdit() {
-  editingField.value = null
-  editValue.value = ''
-}
-
-async function submitEdit() {
-  if (!profile.value) return
-  editLoading.value = true
-  try {
-    const username = editingField.value === 'username' ? editValue.value.trim() : profile.value.username
-    const bio = editingField.value === 'bio' ? (editValue.value.trim() || null) : (profile.value.bio ?? null)
-    const gender = editingField.value === 'gender'
-      ? (editValue.value === '' ? null : Number(editValue.value))
-      : (profile.value.gender ?? null)
-    await updateUserProfile({ username, bio, gender })
-    ElMessage.success('资料已更新')
-    editingField.value = null
-    await loadProfile()
-    if (userStore.userInfo) userStore.userInfo.username = profile.value?.username ?? userStore.userInfo.username
-  } catch (e) {
-    ElMessage.error(e instanceof ApiError ? e.msg : '更新失败')
-  } finally {
-    editLoading.value = false
-  }
-}
-
+const activeTab = ref<TabKey>('songs')
 const profileLoading = ref(true)
 const songsLoading = ref(true)
 const profile = ref<UserProfile | null>(null)
@@ -140,15 +67,52 @@ const currentPage = ref(0)
 const pageError = ref('')
 const playlists = ref<PlaylistItem[]>([])
 const playlistsLoading = ref(false)
-const bilibiliActionLoading = ref(false)
 const followLoading = ref(false)
 const loginDialogOpen = ref(false)
+
+const avatarInputRef = ref<HTMLInputElement | null>(null)
+const avatarUploading = ref(false)
+const editDialogOpen = ref(false)
+const editUsername = ref('')
+const editBio = ref('')
+const editGender = ref<string>('')
+const editLoading = ref(false)
+const bilibiliActionLoading = ref(false)
+const myConnections = ref<ConnectionItem[]>([])
 
 const isFollowing = computed(() => profile.value?.is_following === true)
 const followButtonLabel = computed(() => {
   if (!isFollowing.value) return '关注'
   if (profile.value?.is_followed_by) return '互相关注'
   return '已关注'
+})
+
+const genderIcon = computed(() => {
+  if (profile.value?.gender === 0) return mdiGenderMale
+  if (profile.value?.gender === 1) return mdiGenderFemale
+  return null
+})
+
+const bilibiliAccount = computed(() => {
+  // 本人优先用 connection/list（含非公开绑定）
+  if (isOwnProfile.value) {
+    const mine = myConnections.value.find((a) => a.type === 'bilibili')
+    if (mine) return { id: mine.id, name: mine.name || null }
+  }
+
+  const currentProfile = profile.value
+  if (!currentProfile) return null
+  const connected = currentProfile.connected_accounts?.find((a) => a.type === 'bilibili')
+  if (connected) {
+    return { id: connected.id, name: connected.name || null }
+  }
+  if (currentProfile.bilibili_uid || currentProfile.bilibili_name) {
+    return {
+      id: currentProfile.bilibili_uid ? String(currentProfile.bilibili_uid) : null,
+      name: currentProfile.bilibili_name || null,
+    }
+  }
+  return null
 })
 
 function formatCount(n?: number | null) {
@@ -158,43 +122,68 @@ function formatCount(n?: number | null) {
   return String(n)
 }
 
-function getDescription() {
-  return profile.value?.bio || '这个人很神秘，还没有留下个人简介。'
+function triggerAvatarUpload() {
+  if (!isOwnProfile.value) return
+  avatarInputRef.value?.click()
 }
 
-const genderIcon = computed(() => {
-  if (profile.value?.gender === 0) return mdiGenderMale
-  if (profile.value?.gender === 1) return mdiGenderFemale
-  return mdiAccount
-})
-
-const genderText = computed(() => {
-  if (profile.value?.gender === 0) return '男人'
-  if (profile.value?.gender === 1) return '女人'
-  return '神没有性别'
-})
-
-const bilibiliAccount = computed(() => {
-  const currentProfile = profile.value
-  if (!currentProfile) return null
-
-  const connectedBilibili = currentProfile.connected_accounts?.find((account) => account.type === 'bilibili')
-  if (connectedBilibili) {
-    return {
-      id: connectedBilibili.id,
-      name: connectedBilibili.name || null,
-    }
+async function onAvatarSelected(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  if (file.size > 8 * 1024 * 1024) {
+    ElMessage.error('图片不能超过 8MB')
+    return
   }
-
-  if (currentProfile.bilibili_uid || currentProfile.bilibili_name) {
-    return {
-      id: currentProfile.bilibili_uid ? String(currentProfile.bilibili_uid) : null,
-      name: currentProfile.bilibili_name || null,
+  avatarUploading.value = true
+  try {
+    await setUserAvatar(file)
+    ElMessage.success('头像已更新')
+    await loadProfile()
+    if (userStore.userInfo && profile.value?.avatar_url !== undefined) {
+      const newAvatarUrl = profile.value.avatar_url
+      userStore.userInfo = { ...userStore.userInfo, avatar_url: newAvatarUrl }
+      if (newAvatarUrl) localStorage.setItem('hachimi_avatar_url', newAvatarUrl)
+      else localStorage.removeItem('hachimi_avatar_url')
     }
+  } catch (e) {
+    ElMessage.error(e instanceof ApiError ? e.msg : '上传失败')
+  } finally {
+    avatarUploading.value = false
+    if (avatarInputRef.value) avatarInputRef.value.value = ''
   }
+}
 
-  return null
-})
+function openEditDialog() {
+  if (!profile.value) return
+  editUsername.value = profile.value.username
+  editBio.value = profile.value.bio ?? ''
+  editGender.value = profile.value.gender === null || profile.value.gender === undefined
+    ? ''
+    : String(profile.value.gender)
+  editDialogOpen.value = true
+}
+
+async function submitEdit() {
+  if (!profile.value) return
+  editLoading.value = true
+  try {
+    await updateUserProfile({
+      username: editUsername.value.trim(),
+      bio: editBio.value.trim() || null,
+      gender: editGender.value === '' ? null : Number(editGender.value),
+    })
+    ElMessage.success('资料已更新')
+    editDialogOpen.value = false
+    await loadProfile()
+    if (userStore.userInfo) {
+      userStore.userInfo.username = profile.value?.username ?? userStore.userInfo.username
+    }
+  } catch (e) {
+    ElMessage.error(e instanceof ApiError ? e.msg : '更新失败')
+  } finally {
+    editLoading.value = false
+  }
+}
 
 function openBilibiliProfile() {
   if (!bilibiliAccount.value?.id) return
@@ -210,22 +199,15 @@ async function handleBindBilibili() {
       inputPattern: /^\d+$/,
       inputErrorMessage: '请输入纯数字 UID',
     })
-
     const providerAccountId = value.trim()
     if (!providerAccountId) return
-
     bilibiliActionLoading.value = true
     const challenge = await generateConnectionChallenge('bilibili', providerAccountId)
-
     await ElMessageBox.alert(
       `请前往哔哩哔哩个人主页，将签名修改为以「${challenge.challenge}」结尾，然后点击确定继续校验。`,
       `验证账号：${challenge.provider_account_name}`,
-      {
-        confirmButtonText: '我已完成，开始校验',
-        dangerouslyUseHTMLString: false,
-      },
+      { confirmButtonText: '我已完成，开始校验' },
     )
-
     await verifyConnectionChallenge(challenge.challenge_id)
     ElMessage.success('哔哩哔哩账号绑定成功')
     await loadProfile()
@@ -244,7 +226,6 @@ async function handleUnbindBilibili() {
       cancelButtonText: '取消',
       type: 'warning',
     })
-
     bilibiliActionLoading.value = true
     await unlinkConnection('bilibili')
     ElMessage.success('已解除哔哩哔哩绑定')
@@ -257,14 +238,28 @@ async function handleUnbindBilibili() {
   }
 }
 
+async function loadMyConnections() {
+  if (!isOwnProfile.value) {
+    myConnections.value = []
+    return
+  }
+  try {
+    const resp = await listMyConnections()
+    myConnections.value = resp.items
+  } catch {
+    myConnections.value = []
+  }
+}
+
 async function loadProfile() {
   profileLoading.value = true
   try {
     profile.value = await getUserProfile(uid.value)
+    await loadMyConnections()
   } catch (e) {
-    console.error('加载用户信息失败', e instanceof ApiError ? e.msg : e)
     pageError.value = e instanceof ApiError ? e.msg : '加载用户信息失败'
     profile.value = null
+    myConnections.value = []
   } finally {
     profileLoading.value = false
   }
@@ -296,11 +291,7 @@ async function handleFollow() {
     }
     ElMessage.success('已关注')
   } catch (e) {
-    ElMessage.error(
-      e instanceof ApiError
-        ? (followErrorMessage(e.code) || e.msg)
-        : '关注失败',
-    )
+    ElMessage.error(e instanceof ApiError ? (followErrorMessage(e.code) || e.msg) : '关注失败')
   } finally {
     followLoading.value = false
   }
@@ -312,16 +303,11 @@ async function handleUnfollow() {
     await ElMessageBox.confirm(
       '该用户将从你的关注列表中移除',
       `确定不再关注 ${profile.value.username}？`,
-      {
-        confirmButtonText: '不再关注',
-        cancelButtonText: '取消',
-        type: 'warning',
-      },
+      { confirmButtonText: '不再关注', cancelButtonText: '取消', type: 'warning' },
     )
   } catch {
     return
   }
-
   followLoading.value = true
   try {
     const resp = await unfollowUser(profile.value.uid)
@@ -332,11 +318,7 @@ async function handleUnfollow() {
     }
     ElMessage.success('已取消关注')
   } catch (e) {
-    ElMessage.error(
-      e instanceof ApiError
-        ? (followErrorMessage(e.code) || e.msg)
-        : '取消关注失败',
-    )
+    ElMessage.error(e instanceof ApiError ? (followErrorMessage(e.code) || e.msg) : '取消关注失败')
   } finally {
     followLoading.value = false
   }
@@ -344,22 +326,27 @@ async function handleUnfollow() {
 
 async function loadSongs(page = 0) {
   songsLoading.value = true
-
   try {
-    const resp = await getSongsByUser({
-      uid: uid.value,
-      page,
-      pageSize: PAGE_SIZE,
-    })
+    const resp = await getSongsByUser({ uid: uid.value, page, pageSize: PAGE_SIZE })
     songs.value = resp.songs
     totalSongs.value = resp.total
     currentPage.value = page
   } catch (e) {
-    console.error('加载用户作品失败', e instanceof ApiError ? e.msg : e)
     pageError.value = e instanceof ApiError ? e.msg : '加载用户作品失败'
     songs.value = []
   } finally {
     songsLoading.value = false
+  }
+}
+
+async function loadPlaylists() {
+  playlistsLoading.value = true
+  try {
+    playlists.value = await fetchPublicPlaylistsByUser(uid.value)
+  } catch {
+    playlists.value = []
+  } finally {
+    playlistsLoading.value = false
   }
 }
 
@@ -372,613 +359,440 @@ async function loadPage() {
     songsLoading.value = false
     return
   }
-
   pageError.value = ''
+  activeTab.value = 'songs'
   songs.value = []
   totalSongs.value = 0
   currentPage.value = 0
   playlists.value = []
-
-  await Promise.all([
-    loadProfile(),
-    loadSongs(0),
-    (async () => {
-      playlistsLoading.value = true
-      try { playlists.value = await fetchPublicPlaylistsByUser(uid.value) }
-      catch { playlists.value = [] }
-      finally { playlistsLoading.value = false }
-    })(),
-  ])
+  await Promise.all([loadProfile(), loadSongs(0), loadPlaylists()])
 }
 
-async function handlePageChange(page: number) {
-  await loadSongs(page - 1)
+async function playAll() {
+  if (!songs.value.length) return
+  await playerStore.replaceLocalQueueAndPlay(
+    songs.value.map((song) => ({
+      song_id: song.id,
+      song_display_id: song.display_id,
+      title: song.title,
+      subtitle: song.subtitle,
+      cover_url: song.cover_url,
+      uploader_name: song.uploader_name,
+      uploader_uid: song.uploader_uid,
+      duration_seconds: song.duration_seconds,
+      order_index: 0,
+      add_time: '',
+    })),
+  )
 }
 
 watch(uid, () => {
-  loadPage()
+  void loadPage()
 })
 
 onMounted(() => {
-  loadPage()
+  void loadPage()
 })
 </script>
 
 <template>
   <div class="user-view">
     <div class="user-shell">
-      <section class="profile-hero">
-        <div v-if="profileLoading" class="profile-card skeleton-card">
-          <el-skeleton animated>
-            <template #template>
-              <div class="hero-skeleton">
-                <el-skeleton-item variant="circle" class="avatar-skeleton" />
-                <div class="hero-skeleton-info">
-                  <el-skeleton-item variant="h3" style="width: 180px" />
-                  <el-skeleton-item variant="text" style="width: 120px; margin-top: 10px" />
-                  <el-skeleton-item variant="text" style="width: 90%; margin-top: 16px" />
-                </div>
-              </div>
-            </template>
-          </el-skeleton>
+      <!-- Header：对齐 App HeaderProfileContent -->
+      <section v-if="profileLoading" class="profile-header skeleton">
+        <div class="avatar-skel" />
+        <div class="info-skel">
+          <div class="line w-40" />
+          <div class="line w-70" />
+          <div class="line w-30" />
+        </div>
+      </section>
+
+      <section v-else-if="profile" class="profile-header">
+        <div
+          class="avatar-wrap"
+          :class="{ owner: isOwnProfile }"
+          @click="triggerAvatarUpload"
+        >
+          <img
+            v-if="profile.avatar_url"
+            :src="profile.avatar_url"
+            :alt="profile.username"
+            class="avatar"
+          >
+          <div v-else class="avatar fallback">{{ profile.username?.[0] ?? '神' }}</div>
+          <div v-if="isOwnProfile" class="avatar-overlay">
+            {{ avatarUploading ? '上传中…' : '更换头像' }}
+          </div>
+          <input
+            ref="avatarInputRef"
+            type="file"
+            accept="image/*"
+            hidden
+            @change="onAvatarSelected"
+          >
         </div>
 
-        <div v-else-if="profile" class="profile-card">
-          <div class="profile-main">
-            <!-- 头像区域 -->
-            <div class="avatar-wrap" :class="{ 'is-owner': isOwnProfile }" @click="triggerAvatarUpload">
-              <el-avatar
-                :size="104"
-                :src="profile.avatar_url ?? undefined"
-                class="profile-avatar"
-                :class="{ uploading: avatarUploading }"
+        <div class="profile-info">
+          <div class="name-row">
+            <h1 class="username">{{ profile.username }}</h1>
+            <button
+              v-if="isOwnProfile"
+              type="button"
+              class="edit-btn"
+              @click="openEditDialog"
+            >
+              <MdiIcon :path="mdiPencil" size="16px" />
+              编辑资料
+            </button>
+          </div>
+
+          <p v-if="profile.bio?.trim()" class="bio">{{ profile.bio }}</p>
+
+          <div class="meta-row">
+            <MdiIcon v-if="genderIcon" class="gender-icon" :path="genderIcon" size="16px" />
+            <span>UID: {{ profile.uid }}</span>
+          </div>
+
+          <div class="stats-row">
+            <div class="stats">
+              <button
+                type="button"
+                class="stat-item"
+                :class="{ clickable: isOwnProfile }"
+                :disabled="!isOwnProfile"
+                @click="openFollowers"
               >
-                {{ profile.username?.[0] ?? '神' }}
-              </el-avatar>
-              <div v-if="isOwnProfile" class="avatar-overlay">
-                <span v-if="avatarUploading" class="avatar-overlay-text">上传中…</span>
-                <span v-else class="avatar-overlay-text">更换头像</span>
-              </div>
-              <input
-                ref="avatarInputRef"
-                type="file"
-                accept="image/*"
-                style="display:none"
-                @change="onAvatarSelected"
-              />
+                <strong>{{ formatCount(profile.follower_count) }}</strong>
+                <span>粉丝</span>
+              </button>
+              <button
+                type="button"
+                class="stat-item"
+                :class="{ clickable: isOwnProfile }"
+                :disabled="!isOwnProfile"
+                @click="openFollowing"
+              >
+                <strong>{{ formatCount(profile.following_count) }}</strong>
+                <span>关注</span>
+              </button>
             </div>
 
-            <div class="profile-copy">
-              <!-- 昵称行内编辑 -->
-              <div class="profile-heading-row">
-                <div class="profile-name-block">
-                  <template v-if="editingField === 'username'">
-                    <div class="inline-edit-row">
-                      <el-input
-                        v-model="editValue"
-                        size="large"
-                        maxlength="10"
-                        show-word-limit
-                        class="inline-edit-input name-input"
-                        @keyup.enter="submitEdit"
-                        @keyup.esc="cancelEdit"
-                      />
-                      <button class="inline-edit-btn confirm" :disabled="editLoading" @click="submitEdit"><MdiIcon :path="mdiCheck" size="16px" /></button>
-                      <button class="inline-edit-btn cancel" @click="cancelEdit"><MdiIcon :path="mdiClose" size="16px" /></button>
-                    </div>
-                  </template>
-                  <h1
-                    v-else
-                    class="profile-name"
-                    :class="{ editable: isOwnProfile }"
-                    :title="isOwnProfile ? '点击修改昵称' : ''"
-                    @click="startEdit('username')"
-                  >{{ profile.username }}</h1>
+            <button
+              v-if="!isOwnProfile"
+              type="button"
+              class="follow-btn"
+              :class="{ following: isFollowing }"
+              :disabled="followLoading"
+              @click="isFollowing ? handleUnfollow() : handleFollow()"
+            >
+              {{ followLoading ? '处理中…' : followButtonLabel }}
+            </button>
+          </div>
 
-                  <!-- 性别行 -->
-                  <template v-if="editingField === 'gender'">
-                    <div class="inline-edit-row" style="margin-top:6px">
-                      <el-select v-model="editValue" size="small" style="width:120px" placeholder="选择性别">
-                        <el-option label="神没有性别" value="" />
-                        <el-option label="非女人" value="0" />
-                        <el-option label="非男人" value="1" />
-                      </el-select>
-                      <button class="inline-edit-btn confirm" :disabled="editLoading" @click="submitEdit"><MdiIcon :path="mdiCheck" size="16px" /></button>
-                      <button class="inline-edit-btn cancel" @click="cancelEdit"><MdiIcon :path="mdiClose" size="16px" /></button>
-                    </div>
-                  </template>
-                  <p
-                    v-else
-                    class="profile-subline"
-                    :class="{ editable: isOwnProfile }"
-                    :title="isOwnProfile ? '点击修改性别' : ''"
-                    @click="isOwnProfile ? startEdit('gender') : undefined"
-                  >
-                    UID {{ profile.uid }}
-                    <span class="subline-dot">·</span>
-                    <MdiIcon class="gender-icon" :path="genderIcon" size="16px" />
-                    {{ genderText }}
-                  </p>
-                </div>
-              </div>
+          <div v-if="bilibiliAccount || isOwnProfile" class="connections">
+            <button
+              v-if="bilibiliAccount"
+              type="button"
+              class="connection-chip"
+              @click="openBilibiliProfile"
+            >
+              <img :src="bilibiliColorUrl" alt="哔哩哔哩" class="chip-icon">
+              <span>{{ bilibiliAccount.name || `UID ${bilibiliAccount.id}` }}</span>
+              <MdiIcon :path="mdiOpenInNew" size="14px" />
+            </button>
 
-              <!-- 签名行内编辑 -->
-              <template v-if="editingField === 'bio'">
-                <div class="inline-edit-col" style="margin-top:12px">
-                  <el-input
-                    v-model="editValue"
-                    type="textarea"
-                    :rows="2"
-                    maxlength="300"
-                    show-word-limit
-                    placeholder="写点什么介绍自己…"
-                    @keyup.esc="cancelEdit"
-                  />
-                  <div class="inline-edit-row" style="margin-top:6px">
-                    <button class="inline-edit-btn confirm" :disabled="editLoading" @click="submitEdit"><MdiIcon :path="mdiCheck" size="16px" />保存</button>
-                    <button class="inline-edit-btn cancel" @click="cancelEdit"><MdiIcon :path="mdiClose" size="16px" />取消</button>
-                  </div>
-                </div>
-              </template>
-              <p
-                v-else
-                class="profile-bio"
-                :class="{ editable: isOwnProfile }"
-                :title="isOwnProfile ? '点击修改签名' : ''"
-                @click="isOwnProfile ? startEdit('bio') : undefined"
-              >{{ getDescription() }}</p>
+            <button
+              v-else-if="isOwnProfile"
+              type="button"
+              class="connection-chip"
+              :disabled="bilibiliActionLoading"
+              @click="handleBindBilibili"
+            >
+              <img :src="bilibiliColorUrl" alt="哔哩哔哩" class="chip-icon">
+              <span>{{ bilibiliActionLoading ? '处理中…' : '绑定哔哩哔哩' }}</span>
+            </button>
 
-              <div class="profile-bilibili-section">
-                <button
-                  v-if="bilibiliAccount"
-                  class="profile-bilibili-row"
-                  type="button"
-                  @click="openBilibiliProfile"
-                >
-                  <img :src="bilibiliColorUrl" alt="哔哩哔哩" class="profile-bilibili-icon">
-                  <span class="profile-bilibili-value">{{ bilibiliAccount.name || `UID ${bilibiliAccount.id}` }}</span>
-                </button>
-
-                <button
-                  v-if="isOwnProfile"
-                  class="profile-bilibili-action"
-                  type="button"
-                  :disabled="bilibiliActionLoading"
-                  @click="bilibiliAccount ? handleUnbindBilibili() : handleBindBilibili()"
-                >
-                  {{ bilibiliActionLoading ? '处理中…' : (bilibiliAccount ? '解绑哔哩哔哩' : '绑定哔哩哔哩') }}
-                </button>
-              </div>
-
-              <div class="follow-stats-row">
-                <div class="follow-stats">
-                  <button
-                    type="button"
-                    class="stat-item"
-                    :class="{ clickable: isOwnProfile }"
-                    :disabled="!isOwnProfile"
-                    @click="openFollowers"
-                  >
-                    <strong>{{ formatCount(profile.follower_count) }}</strong>
-                    <span>粉丝</span>
-                  </button>
-                  <button
-                    type="button"
-                    class="stat-item"
-                    :class="{ clickable: isOwnProfile }"
-                    :disabled="!isOwnProfile"
-                    @click="openFollowing"
-                  >
-                    <strong>{{ formatCount(profile.following_count) }}</strong>
-                    <span>关注</span>
-                  </button>
-                </div>
-
-                <button
-                  v-if="!isOwnProfile"
-                  type="button"
-                  class="follow-action-btn"
-                  :class="{ following: isFollowing }"
-                  :disabled="followLoading"
-                  @click="isFollowing ? handleUnfollow() : handleFollow()"
-                >
-                  {{ followLoading ? '处理中…' : followButtonLabel }}
-                </button>
-              </div>
-            </div>
+            <button
+              v-if="isOwnProfile && bilibiliAccount"
+              type="button"
+              class="connection-chip"
+              :disabled="bilibiliActionLoading"
+              @click="handleUnbindBilibili"
+            >
+              <img :src="bilibiliColorUrl" alt="哔哩哔哩" class="chip-icon">
+              <span>{{ bilibiliActionLoading ? '处理中…' : '解绑哔哩哔哩' }}</span>
+            </button>
           </div>
         </div>
       </section>
 
-      <section class="works-panel">
-        <div class="panel-header">
-          <div>
-            <h2 class="panel-title">全部神作</h2>
-            <p class="panel-subtitle">
-              共 {{ formatCount(totalSongs) }} 首
-            </p>
-          </div>
+      <div v-else-if="pageError" class="state-block">
+        <MdiIcon :path="mdiAlertCircleOutline" size="22px" />
+        <p>{{ pageError }}</p>
+      </div>
+
+      <!-- Tabs：作品 / 歌单 / 动态 -->
+      <template v-if="profile">
+        <div class="tab-bar">
+          <button
+            type="button"
+            class="tab"
+            :class="{ active: activeTab === 'songs' }"
+            @click="activeTab = 'songs'"
+          >作品</button>
+          <button
+            type="button"
+            class="tab"
+            :class="{ active: activeTab === 'playlists' }"
+            @click="activeTab = 'playlists'"
+          >歌单</button>
+          <button
+            type="button"
+            class="tab"
+            :class="{ active: activeTab === 'activity' }"
+            @click="activeTab = 'activity'"
+          >动态</button>
         </div>
 
-        <div v-if="pageError && !profileLoading && !songsLoading" class="state-card error-state">
-          <MdiIcon :path="mdiAlertCircleOutline" size="20px" />
-          <span>{{ pageError }}</span>
-        </div>
+        <!-- 作品 -->
+        <div v-if="activeTab === 'songs'" class="tab-panel">
+          <button
+            v-if="songs.length"
+            type="button"
+            class="play-all-btn"
+            @click="playAll"
+          >
+            <MdiIcon :path="mdiPlay" size="18px" />
+            播放全部
+          </button>
 
-        <div v-else-if="songsLoading" class="song-grid">
-          <div v-for="i in PAGE_SIZE" :key="i" class="song-skeleton-card">
-            <div class="user-song-skel-cover"></div>
-            <div class="user-song-skel-info">
-              <div class="user-song-skel-line user-song-skel-title"></div>
-              <div class="user-song-skel-line user-song-skel-sub"></div>
-              <div class="user-song-skel-line user-song-skel-meta"></div>
-            </div>
+          <div v-if="songsLoading" class="song-grid">
+            <div v-for="i in 8" :key="i" class="song-skel" />
           </div>
-        </div>
-
-        <template v-else>
-          <div v-if="songs.length" class="song-grid">
-            <SongCard
-              v-for="song in songs"
-              :key="song.id"
-              :song="song"
-            />
+          <div v-else-if="songs.length" class="song-grid">
+            <SongCard v-for="song in songs" :key="song.id" :song="song" />
+          </div>
+          <div v-else class="state-block compact">
+            <p>什么也没有</p>
           </div>
 
-          <div v-else class="state-card empty-state">
-            <MdiIcon :path="mdiHeadphones" size="20px" />
-            <span>这个人还没有公开发布作品</span>
-          </div>
-
-          <div v-if="songs.length && totalSongs > PAGE_SIZE" class="panel-footer">
+          <div v-if="songs.length && totalSongs > PAGE_SIZE" class="pager">
             <el-pagination
               background
               layout="prev, pager, next"
               :current-page="currentPage + 1"
               :page-size="PAGE_SIZE"
               :total="totalSongs"
-              @current-change="handlePageChange"
+              @current-change="(p: number) => loadSongs(p - 1)"
             />
           </div>
-        </template>
-      </section>
+        </div>
 
-      <!-- 公开歌单 -->
-      <section v-if="playlistsLoading || playlists.length" class="works-panel">
-        <div class="panel-header">
-          <div>
-            <h2 class="panel-title">公开歌单</h2>
-            <p class="panel-subtitle">共 {{ playlists.length }} 个</p>
+        <!-- 歌单 -->
+        <div v-else-if="activeTab === 'playlists'" class="tab-panel">
+          <div v-if="playlistsLoading" class="state-block compact">
+            <div class="loading-dot" />
           </div>
-        </div>
-        <div v-if="playlistsLoading" class="playlist-grid">
-          <div v-for="i in 3" :key="i" class="playlist-skeleton-card">
-            <div class="pl-skel-inner">
-              <div class="pl-skel-cover"></div>
-              <div class="pl-skel-info">
-                <div class="pl-skel-topline">
-                  <div class="pl-skel-line pl-skel-name"></div>
-                  <div class="pl-skel-line pl-skel-count"></div>
-                </div>
-                <div class="pl-skel-line pl-skel-desc"></div>
-                <div class="pl-skel-line pl-skel-desc short"></div>
+          <div v-else-if="playlists.length" class="playlist-list">
+            <button
+              v-for="pl in playlists"
+              :key="pl.id"
+              type="button"
+              class="playlist-card"
+              @click="router.push(`/playlist/${pl.id}`)"
+            >
+              <div class="pl-cover">
+                <img v-if="pl.cover_url" :src="pl.cover_url" :alt="pl.name">
+                <MdiIcon v-else :path="mdiPlaylistMusic" size="22px" />
               </div>
-            </div>
-          </div>
-        </div>
-        <div v-else class="playlist-grid">
-          <div
-            v-for="pl in playlists"
-            :key="pl.id"
-            class="playlist-card"
-            @click="router.push('/playlist/' + pl.id)"
-          >
-            <div class="pl-cover-wrap">
-              <img v-if="pl.cover_url" :src="pl.cover_url" :alt="pl.name" class="pl-cover-img" />
-              <div v-else class="pl-cover-placeholder">♫</div>
-            </div>
-            <div class="pl-main">
-              <div class="pl-topline">
+              <div class="pl-info">
                 <span class="pl-name">{{ pl.name }}</span>
                 <span class="pl-count">{{ pl.songs_count }} 首</span>
               </div>
-              <p class="pl-desc">{{ pl.description || '这个歌单还没有填写简介。' }}</p>
-            </div>
+            </button>
+          </div>
+          <div v-else class="state-block compact">
+            <p>什么也没有</p>
           </div>
         </div>
-      </section>
+
+        <!-- 动态 -->
+        <div v-else class="tab-panel">
+          <div class="state-block compact">
+            <p>即将推出</p>
+          </div>
+        </div>
+      </template>
     </div>
 
-    <LoginDialog
-      :model-value="loginDialogOpen"
-      @update:model-value="(open) => { loginDialogOpen = open; if (!open && userStore.isLoggedIn) loadProfile() }"
-    />
+    <el-dialog
+      v-model="editDialogOpen"
+      title="编辑资料"
+      width="420px"
+      destroy-on-close
+    >
+      <div class="edit-form">
+        <label>昵称</label>
+        <el-input v-model="editUsername" maxlength="10" show-word-limit />
+        <label>简介</label>
+        <el-input v-model="editBio" type="textarea" :rows="3" maxlength="300" show-word-limit />
+        <label>性别</label>
+        <el-select v-model="editGender" placeholder="选择性别" style="width: 100%">
+          <el-option label="神没有性别" value="" />
+          <el-option label="非女人" value="0" />
+          <el-option label="非男人" value="1" />
+        </el-select>
+      </div>
+      <template #footer>
+        <el-button @click="editDialogOpen = false">取消</el-button>
+        <el-button type="primary" :loading="editLoading" @click="submitEdit">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <LoginDialog v-model="loginDialogOpen" />
   </div>
 </template>
 
 <style scoped>
 .user-view {
   min-height: calc(100vh - var(--hw-header-height));
-  padding: 22px 16px 40px;
   background: var(--hw-bg-primary);
+  padding: 0 16px 80px;
 }
 
 .user-shell {
-  max-width: 1180px;
+  max-width: 1080px;
   margin: 0 auto;
+}
+
+/* ── Header ── */
+.profile-header {
   display: flex;
-  flex-direction: column;
-  gap: 22px;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 8px 0 24px;
 }
 
-.profile-card,
-.works-panel,
-.state-card,
-.song-skeleton-card {
-  background: var(--hw-bg-secondary);
-  border: 1px solid var(--hw-border);
-  border-radius: 18px;
-}
-
-.profile-card {
+.avatar-wrap {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  flex-shrink: 0;
+  border-radius: 50%;
   overflow: hidden;
-  position: relative;
-  padding: 26px;
-  background: var(--hw-bg-secondary);
+  background: var(--hw-bg-hover);
 }
 
-.profile-main {
-  display: grid;
-  grid-template-columns: 104px minmax(0, 1fr);
-  gap: 22px;
-  align-items: center;
-}
-
-.avatar-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.profile-avatar {
-  border: 0 solid transparent;
-  transition: filter 0.18s ease;
-}
-
-.avatar-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 104px;
-  height: 104px;
-}
-
-.avatar-wrap.is-owner {
+.avatar-wrap.owner {
   cursor: pointer;
 }
 
-.avatar-wrap.is-owner:hover .profile-avatar {
-  filter: brightness(0.55);
+.avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
-.avatar-wrap.is-owner:hover .avatar-overlay {
-  opacity: 1;
+.avatar.fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--hw-text-secondary);
 }
 
 .avatar-overlay {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  transition: opacity 0.18s ease;
-  pointer-events: none;
-}
-
-.avatar-overlay-text {
-  font-size: 12px;
-  font-weight: 600;
+  background: rgba(0, 0, 0, 0.45);
   color: #fff;
-  text-align: center;
-  line-height: 1.3;
-  padding: 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.15s;
 }
 
-/* 行内编辑 */
-.profile-name.editable,
-.profile-subline.editable,
-.profile-bio.editable {
-  cursor: pointer;
-  border-radius: 6px;
-  transition: background 0.15s;
+.avatar-wrap.owner:hover .avatar-overlay {
+  opacity: 1;
 }
 
-.profile-name.editable:hover,
-.profile-subline.editable:hover,
-.profile-bio.editable:hover {
-  background: color-mix(in srgb, var(--theme-color) 8%, transparent);
-}
-
-.profile-name-block {
+.profile-info {
+  flex: 1;
   min-width: 0;
-}
-
-.inline-edit-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.inline-edit-col {
   display: flex;
   flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
 }
 
-.inline-edit-input.name-input {
-  font-size: 24px;
-  font-weight: 800;
-}
-
-.inline-edit-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--hw-border);
-  background: var(--hw-bg-secondary);
-  color: var(--hw-text-secondary);
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-
-.inline-edit-btn.confirm {
-  border-color: var(--theme-color);
-  background: var(--theme-color);
-  color: #fff;
-}
-
-.inline-edit-btn.confirm:hover {
-  background: color-mix(in srgb, var(--theme-color) 85%, #000);
-}
-
-.inline-edit-btn.cancel:hover {
-  border-color: #ef4444;
-  color: #ef4444;
-}
-
-.inline-edit-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.profile-copy {
-  min-width: 0;
-}
-
-.profile-heading-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.profile-name {
-  font-size: 32px;
-  line-height: 1.1;
-  font-weight: 800;
-  color: var(--hw-text-primary);
-  letter-spacing: -0.6px;
-}
-
-.profile-subline {
-  margin-top: 6px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--hw-text-tertiary);
-}
-
-.subline-dot {
-  opacity: 0.7;
-}
-
-.gender-icon {
-  font-size: 14px;
-  color: var(--theme-color);
-}
-
-.profile-bio {
-  margin-top: 0;
-  max-width: 760px;
-  font-size: 14px;
-  line-height: 1.8;
-  color: var(--hw-text-secondary);
-}
-
-.profile-bilibili-section {
-  margin-top: 0;
+.name-row {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
 }
 
-.profile-bilibili-row {
-  margin-top: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  font-size: 13px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-}
-
-.profile-bilibili-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 30px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, #fb7299 30%, var(--hw-border));
-  background: color-mix(in srgb, #fb7299 12%, var(--hw-bg-primary));
-  color: #fb7299;
-  font-size: 12px;
+.username {
+  font-size: 22px;
   font-weight: 700;
-  cursor: pointer;
-  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
-}
-
-.profile-bilibili-action:hover {
-  background: color-mix(in srgb, #fb7299 18%, var(--hw-bg-hover));
-  border-color: color-mix(in srgb, #fb7299 55%, var(--hw-border));
-  transform: translateY(-1px);
-}
-
-.profile-bilibili-action:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.profile-bilibili-row:hover .profile-bilibili-value {
-  color: #fb7299;
-}
-
-.profile-bilibili-icon {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  display: block;
-}
-
-.profile-bilibili-value {
   color: var(--hw-text-primary);
-  font-weight: 600;
+  line-height: 1.3;
 }
 
-.follow-stats-row {
-  margin-top: 16px;
+.edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--hw-border);
+  background: transparent;
+  color: var(--hw-text-secondary);
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.edit-btn:hover {
+  border-color: var(--theme-color);
+  color: var(--theme-color);
+}
+
+.bio {
+  font-size: 14px;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--hw-text-primary) 70%, transparent);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.meta-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--hw-text-secondary);
+}
+
+.gender-icon {
+  color: var(--hw-text-secondary);
+}
+
+.stats-row {
   display: flex;
   align-items: center;
   gap: 16px;
+  padding: 8px 0;
   flex-wrap: wrap;
 }
 
-.follow-stats {
+.stats {
   display: flex;
-  align-items: center;
   gap: 32px;
 }
 
@@ -1002,14 +816,9 @@ onMounted(() => {
   color: var(--theme-color);
 }
 
-.stat-item:disabled {
-  cursor: default;
-}
-
 .stat-item strong {
   font-size: 16px;
   font-weight: 600;
-  line-height: 1.2;
 }
 
 .stat-item span {
@@ -1017,7 +826,7 @@ onMounted(() => {
   color: var(--hw-text-secondary);
 }
 
-.follow-action-btn {
+.follow-btn {
   min-width: 88px;
   min-height: 36px;
   padding: 8px 16px;
@@ -1028,465 +837,290 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
-.follow-action-btn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--theme-color) 88%, #000);
-}
-
-.follow-action-btn.following {
+.follow-btn.following {
   background: transparent;
   border: 1px solid var(--hw-border);
   color: var(--hw-text-secondary);
   font-weight: 500;
 }
 
-.follow-action-btn.following:hover:not(:disabled) {
-  border-color: var(--theme-color);
-  color: var(--theme-color);
-  background: var(--theme-color-light);
-}
-
-.follow-action-btn:disabled {
+.follow-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.works-panel {
-  padding: 22px;
-}
-
-.panel-header {
+.connections {
   display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.panel-title {
-  font-size: 22px;
-  line-height: 1.15;
-  font-weight: 800;
+.connection-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--hw-border);
+  background: var(--hw-bg-secondary);
   color: var(--hw-text-primary);
-  letter-spacing: -0.4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
 
-.panel-subtitle {
-  margin-top: 6px;
-  font-size: 13px;
-  color: var(--hw-text-tertiary);
+.connection-chip:hover:not(:disabled) {
+  border-color: #fb7299;
+  color: #fb7299;
+}
+
+.connection-chip:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.chip-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* skeleton */
+.profile-header.skeleton {
+  align-items: center;
+}
+
+.avatar-skel {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: var(--hw-bg-secondary);
+}
+
+.info-skel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-skel .line {
+  height: 16px;
+  border-radius: 8px;
+  background: var(--hw-bg-secondary);
+}
+
+.w-40 { width: 40%; }
+.w-70 { width: 70%; }
+.w-30 { width: 30%; }
+
+/* ── Tabs ── */
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  padding: 8px 0 16px;
+  border-bottom: 1px solid var(--hw-border);
+  margin-bottom: 16px;
+}
+
+.tab {
+  border: none;
+  background: transparent;
+  color: var(--hw-text-secondary);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--hw-text-primary);
+}
+
+.tab.active {
+  color: var(--theme-color);
+  background: var(--theme-color-light);
+}
+
+.tab-panel {
+  min-height: 240px;
+}
+
+.play-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 12px;
+  background: var(--theme-color);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.play-all-btn:hover {
+  background: color-mix(in srgb, var(--theme-color) 85%, #000);
 }
 
 .song-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
 }
 
-.song-skeleton-card {
-  background: var(--hw-bg-secondary);
-  border: none;
-  border-radius: 10px;
-  overflow: hidden;
-  padding: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.user-song-skel-cover {
-  width: 100%;
+.song-skel {
   aspect-ratio: 1;
-  display: block;
-  border-radius: 7px;
-  background: linear-gradient(
-    90deg,
-    var(--hw-bg-primary) 25%,
-    var(--hw-bg-hover) 50%,
-    var(--hw-bg-primary) 75%
-  );
-  background-size: 400% 100%;
-  animation: el-skeleton-loading 1.4s ease infinite;
+  border-radius: 12px;
+  background: var(--hw-bg-secondary);
 }
 
-.user-song-skel-info {
-  padding: 8px 10px 10px;
+.playlist-list {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
 }
 
-.user-song-skel-line {
-  height: 12px;
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    var(--hw-bg-primary) 25%,
-    var(--hw-bg-hover) 50%,
-    var(--hw-bg-primary) 75%
-  );
-  background-size: 400% 100%;
-  animation: el-skeleton-loading 1.4s ease infinite;
-}
-
-.user-song-skel-title {
-  width: 85%;
-  height: 13px;
-}
-
-.user-song-skel-sub {
-  width: 55%;
-}
-
-.user-song-skel-meta {
-  width: 70%;
-  margin-top: 1px;
-}
-
-.hero-skeleton {
-  display: grid;
-  grid-template-columns: 104px minmax(0, 1fr);
-  gap: 22px;
-  align-items: center;
-}
-
-.avatar-skeleton {
-  width: 104px;
-  height: 104px;
-}
-
-.panel-footer {
-  margin-top: 24px;
-  display: flex;
-  justify-content: center;
-}
-
-:deep(.el-select) {
-  --el-color-primary: var(--theme-color);
-  --el-color-primary-light-3: color-mix(in srgb, var(--theme-color) 70%, white);
-  --el-color-primary-light-5: color-mix(in srgb, var(--theme-color) 50%, white);
-  --el-color-primary-light-7: color-mix(in srgb, var(--theme-color) 30%, white);
-  --el-color-primary-light-8: color-mix(in srgb, var(--theme-color) 20%, white);
-  --el-color-primary-light-9: color-mix(in srgb, var(--theme-color) 10%, white);
-  /* 覆盖 EP 内部 fill 变量，防止深色模式下 wrapper 被强制渲染为白色 */
-  --el-fill-color-blank: var(--hw-bg-input);
-  --el-input-bg-color: var(--hw-bg-input);
-  --el-text-color-regular: var(--hw-text-primary);
-  --el-text-color-placeholder: var(--hw-text-tertiary);
-  --el-border-color: var(--hw-border);
-}
-
-:deep(.el-select .el-input__wrapper) {
-  background-color: var(--hw-bg-input) !important;
-  box-shadow: 0 0 0 1px var(--hw-border) inset !important;
-}
-
-:deep(.el-select .el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px var(--theme-color) inset !important;
-}
-
-:deep(.el-select .el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px var(--theme-color) inset !important;
-}
-
-:deep(.el-select .el-input__inner) {
-  color: var(--hw-text-primary) !important;
-  background-color: transparent !important;
-}
-
-:deep(.el-select-dropdown) {
-  --el-color-primary: var(--theme-color);
-  background-color: var(--hw-bg-secondary);
-  border-color: var(--hw-border);
-}
-
-:deep(.el-select-dropdown__item) {
-  color: var(--hw-text-primary);
-}
-
-:deep(.el-select-dropdown__item.is-hovering) {
-  background-color: var(--hw-bg-hover);
-}
-
-:deep(.el-select-dropdown__item.is-selected) {
-  color: var(--theme-color);
-  font-weight: 600;
-}
-:deep(.el-pagination.is-background .btn-next),
-:deep(.el-pagination.is-background .btn-prev),
-:deep(.el-pagination.is-background .el-pager li) {
-  background: var(--hw-bg-primary);
-  border: 1px solid var(--hw-border);
-  color: var(--hw-text-secondary);
-}
-
-:deep(.el-pagination.is-background .el-pager li.is-active) {
-  background: var(--theme-color);
-  border-color: var(--theme-color);
-  color: #fff;
-}
-
-.state-card {
-  min-height: 140px;
+.playlist-card {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  color: var(--hw-text-tertiary);
-}
-
-.error-state {
-  color: #ff7875;
-}
-
-.empty-state :deep(.el-icon),
-.error-state :deep(.el-icon) {
-  font-size: 18px;
-}
-
-@media (max-width: 1100px) {
-  .song-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .playlist-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 820px) {
-  .profile-card {
-    padding: 20px;
-  }
-
-  .profile-main,
-  .hero-skeleton {
-    grid-template-columns: 1fr;
-  }
-
-  .avatar-wrap {
-    justify-content: flex-start;
-  }
-
-  .profile-heading-row,
-  .panel-footer {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .song-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .playlist-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-.playlist-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
-}
-
-.playlist-card,
-.playlist-skeleton-card {
-  display: flex;
-  gap: 14px;
-  min-width: 0;
+  width: 100%;
   padding: 12px;
-  border: 1px solid var(--hw-border);
-  border-radius: 16px;
+  border: none;
+  border-radius: 12px;
   background: var(--hw-bg-secondary);
+  text-align: left;
   cursor: pointer;
-  transition: background 0.18s ease, border-color 0.18s ease;
+  color: inherit;
 }
 
 .playlist-card:hover {
+  background: color-mix(in srgb, var(--hw-bg-secondary) 88%, var(--theme-color));
+}
+
+.pl-cover {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  overflow: hidden;
   background: var(--hw-bg-hover);
-  border-color: color-mix(in srgb, var(--theme-color) 30%, var(--hw-border));
-}
-
-.pl-cover-wrap {
-  flex-shrink: 0;
-  width: 80px;
-  height: 80px;
-}
-
-.pl-cover-img {
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 10px;
-  display: block;
-}
-
-.pl-cover-placeholder {
-  width: 80px;
-  height: 80px;
-  border-radius: 10px;
-  background: var(--hw-bg-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--hw-text-tertiary);
-  font-size: 26px;
+  flex-shrink: 0;
 }
 
-.pl-main {
-  flex: 1;
+.pl-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pl-info {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-}
-
-.pl-topline {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 2px;
 }
 
 .pl-name {
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--hw-text-primary);
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 0;
+  white-space: nowrap;
 }
 
 .pl-count {
-  flex-shrink: 0;
-  font-size: 12px;
-  color: var(--hw-text-tertiary);
-}
-
-.pl-desc {
-  margin-top: 7px;
   font-size: 12px;
   color: var(--hw-text-secondary);
-  line-height: 1.6;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
-.pl-skel-inner {
-  display: flex;
-  gap: 14px;
-  align-items: flex-start;
-  width: 100%;
-}
-
-.pl-skel-cover {
-  flex-shrink: 0;
-  width: 80px;
-  height: 80px;
-  border-radius: 10px;
-  background: linear-gradient(
-    90deg,
-    var(--hw-bg-primary) 25%,
-    var(--hw-bg-hover) 50%,
-    var(--hw-bg-primary) 75%
-  );
-  background-size: 400% 100%;
-  animation: el-skeleton-loading 1.4s ease infinite;
-}
-
-.pl-skel-info {
-  flex: 1;
-  min-width: 0;
+.state-block {
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
+  gap: 10px;
+  min-height: 280px;
+  color: var(--hw-text-tertiary);
+  text-align: center;
 }
 
-.pl-skel-topline {
+.state-block.compact {
+  min-height: 200px;
+}
+
+.pager {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  justify-content: center;
+  padding: 24px 0 8px;
+}
+
+.loading-dot {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--hw-border);
+  border-top-color: var(--theme-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
-.pl-skel-line {
-  height: 12px;
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    var(--hw-bg-primary) 25%,
-    var(--hw-bg-hover) 50%,
-    var(--hw-bg-primary) 75%
-  );
-  background-size: 400% 100%;
-  animation: el-skeleton-loading 1.4s ease infinite;
-}
-
-.pl-skel-name {
-  width: 58%;
-  height: 14px;
-}
-
-.pl-skel-count {
-  width: 42px;
-  flex-shrink: 0;
-}
-
-.pl-skel-desc {
-  width: 88%;
+.edit-form label {
   margin-top: 8px;
+  font-size: 13px;
+  color: var(--hw-text-secondary);
 }
 
-.pl-skel-desc.short {
-  width: 68%;
-  margin-top: 6px;
-}
-
-@media (max-width: 1100px) {
-  .playlist-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 820px) {
-  .playlist-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 520px) {
-  .playlist-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+@media (max-width: 720px) {
+  .profile-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
   }
 
-  .user-view {
-    padding: 16px 12px 28px;
+  .avatar-wrap,
+  .avatar-skel {
+    width: 120px;
+    height: 120px;
   }
 
-  .profile-card,
-  .works-panel {
-    padding: 16px;
-    border-radius: 16px;
+  .profile-info {
+    align-items: center;
   }
 
-  .profile-name {
-    font-size: 26px;
+  .name-row,
+  .meta-row,
+  .stats-row,
+  .connections {
+    justify-content: center;
   }
 
-  .profile-bio {
-    margin-top: 12px;
-    font-size: 13px;
-    line-height: 1.7;
+  .bio {
+    text-align: center;
   }
 
-  .song-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+  .stats-row {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>
