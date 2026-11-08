@@ -163,6 +163,24 @@ onMounted(() => {
   <div class="playlist-view">
     <div class="pv-shell">
 
+      <div class="pv-hero">
+        <div class="hero-left">
+          <MdiIcon class="hero-icon" :path="mdiPlaylistMusic" size="36px" />
+          <div>
+            <h1 class="hero-title">歌单</h1>
+            <p class="hero-sub">整理你的神人收藏</p>
+          </div>
+        </div>
+        <button
+          v-if="userStore.isLoggedIn && activeTab === 'mine'"
+          class="pv-create-btn"
+          @click="openCreateDialog"
+        >
+          <MdiIcon :path="mdiPlus" size="18px" />
+          新建歌单
+        </button>
+      </div>
+
       <!-- 顶栏 -->
       <div class="pv-topbar">
         <div class="pv-tabs">
@@ -183,10 +201,6 @@ onMounted(() => {
             收藏的歌单
           </button>
         </div>
-        <button v-if="activeTab === 'mine'" class="pv-create-btn" @click="openCreateDialog">
-          <MdiIcon :path="mdiPlus" size="18px" />
-          新建歌单
-        </button>
       </div>
 
       <!-- 未登录提示 -->
@@ -354,12 +368,49 @@ onMounted(() => {
 <style scoped>
 .playlist-view {
   min-height: calc(100vh - var(--hw-header-height));
-  padding: 28px 20px 120px;
+  background: var(--hw-bg-primary);
+  padding: 0 16px 120px;
 }
 
 .pv-shell {
-  max-width: 780px;
+  max-width: 860px;
   margin: 0 auto;
+}
+
+/* ─── Hero（对齐 history-hero）─── */
+.pv-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 0 24px;
+  flex-wrap: wrap;
+}
+
+.hero-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hero-icon {
+  font-size: 36px;
+  color: var(--theme-color);
+  flex-shrink: 0;
+}
+
+.hero-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--hw-text-primary);
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.hero-sub {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--hw-text-tertiary);
 }
 
 /* ─── 顶栏 ─── */
