@@ -23,3 +23,12 @@ app.mount('#app')
 // 必须在 mount 后调用，因为 pinia 需要先激活
 const authStore = useAuthStore()
 authStore.restoreSession()
+
+// PWA：注册最小 Service Worker，便于浏览器提供「安装应用」入口
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    void navigator.serviceWorker.register('/sw.js').catch(() => {
+      // 安装失败时静默忽略，不影响正常浏览
+    })
+  })
+}
