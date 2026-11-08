@@ -55,6 +55,11 @@ export interface SongExternalLink {
   url: string
 }
 
+export interface SongTag {
+  id: number
+  name: string
+}
+
 export interface Song {
   id: number
   display_id: string

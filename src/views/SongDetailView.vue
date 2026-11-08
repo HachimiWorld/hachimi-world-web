@@ -6,6 +6,7 @@ import {
   mdiAccount,
   mdiAlertCircleOutline,
   mdiClockEditOutline,
+  mdiCommentOutline,
   mdiHeartOutline,
   mdiInformationOutline,
   mdiPlay,
@@ -22,6 +23,7 @@ import { usePlayerStore } from '@/stores/player'
 import { useUserStore } from '@/stores/user'
 import LoginDialog from '@/components/LoginDialog.vue'
 import PlaylistManageDialog from '@/components/PlaylistManageDialog.vue'
+import SongCommentsSection from '@/components/SongCommentsSection.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -35,6 +37,11 @@ const liked = ref(false)
 const likeLoading = ref(false)
 const playlistDialogOpen = ref(false)
 const loginDialogOpen = ref(false)
+const commentsSectionEl = ref<HTMLElement | null>(null)
+
+function scrollToComments() {
+  commentsSectionEl.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
 const songId = computed(() => Number(route.params.id))
 
@@ -479,6 +486,10 @@ onUnmounted(() => {
                   <MdiIcon :path="mdiShareVariant" size="18px" />
                   分享
                 </button>
+                <button class="action-btn" @click="scrollToComments">
+                  <MdiIcon :path="mdiCommentOutline" size="18px" />
+                  评论
+                </button>
               </div>
 
               <div class="info-board">
@@ -513,6 +524,14 @@ onUnmounted(() => {
                     @click="router.push({ path: '/search', query: { q: tag.name } })"
                   >{{ tag.name }}</button>
                 </div>
+              </div>
+
+              <div ref="commentsSectionEl">
+                <SongCommentsSection
+                  :target-id="song.id"
+                  :owner-uid="song.uploader_uid"
+                  @require-login="loginDialogOpen = true"
+                />
               </div>
             </div>
           </div>
