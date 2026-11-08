@@ -292,8 +292,6 @@ onMounted(() => {
 
 .comments-wrap {
   margin-top: 24px;
-  padding-top: 8px;
-  border-top: 1px solid var(--hw-border);
 }
 
 .state-card {

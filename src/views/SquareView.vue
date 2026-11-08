@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { mdiAlertCircleOutline, mdiNewspaper, mdiPencilPlus } from '@mdi/js'
+import { mdiAlertCircleOutline, mdiForum, mdiNewspaper, mdiPencilPlus } from '@mdi/js'
 import MdiIcon from '@/components/icons/MdiIcon.vue'
 import MomentCard from '@/components/MomentCard.vue'
 import MomentComposer from '@/components/MomentComposer.vue'
@@ -200,7 +200,7 @@ onMounted(() => {
     <div class="square-shell">
       <div class="square-hero">
         <div class="hero-left">
-          <MdiIcon class="hero-icon" :path="mdiNewspaper" size="36px" />
+          <MdiIcon class="hero-icon" :path="mdiForum" size="36px" />
           <div>
             <h1 class="hero-title">广场</h1>
             <p class="hero-sub">动态与活动公告</p>
@@ -254,7 +254,7 @@ onMounted(() => {
 
         <div v-else-if="!moments.length" class="state-card empty">
           <div class="empty-icon">
-            <MdiIcon :path="mdiNewspaper" size="28px" />
+            <MdiIcon :path="mdiForum" size="28px" />
           </div>
           <p class="empty-title">广场还空着</p>
           <p class="empty-subtitle">来发第一条动态吧</p>

@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { mdiArrowLeft, mdiDeleteOutline, mdiNewspaper } from '@mdi/js'
+import { mdiArrowLeft, mdiDeleteOutline, mdiForum } from '@mdi/js'
 import MdiIcon from '@/components/icons/MdiIcon.vue'
 import MomentCard from '@/components/MomentCard.vue'
 import SongCommentsSection from '@/components/SongCommentsSection.vue'
@@ -139,7 +139,7 @@ onMounted(() => {
       </div>
 
       <div v-else-if="errorText" class="state-card">
-        <MdiIcon :path="mdiNewspaper" size="22px" />
+        <MdiIcon :path="mdiForum" size="22px" />
         <p>{{ errorText }}</p>
         <button type="button" class="retry-btn" @click="load">重试</button>
       </div>

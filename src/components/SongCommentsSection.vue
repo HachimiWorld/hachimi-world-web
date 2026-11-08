@@ -750,6 +750,7 @@ defineExpose({ reload: () => load() })
   display: flex;
   align-items: center;
   gap: 8px;
+  padding-top: 16px;
   margin-bottom: 8px;
 }
 
