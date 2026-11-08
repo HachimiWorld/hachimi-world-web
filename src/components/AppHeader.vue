@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/theme'
+import { useAuthStore } from '@/stores/auth'
+import { useMessageStore } from '@/stores/message'
 import MobileSidebar from './MobileSidebar.vue'
 import LoginDialog from './LoginDialog.vue'
 import MdiIcon from '@/components/icons/MdiIcon.vue'
 import {
   mdiAccount,
+  mdiBellOutline,
   mdiMagnify,
   mdiMenu,
 } from '@mdi/js'
@@ -17,7 +20,9 @@ import darkLogoUrl from '@/assets/logo-dark.svg'
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const authStore = useAuthStore()
 const themeStore = useThemeStore()
+const messageStore = useMessageStore()
 const currentLogoUrl = computed(() => (themeStore.isDark ? darkLogoUrl : lightLogoUrl))
 
 const sidebarOpen = ref(false)
@@ -62,6 +67,26 @@ function handleAvatarClick() {
     loginDialogOpen.value = true
   }
 }
+
+function handleMessageClick() {
+  if (!authStore.isLoggedIn) {
+    loginDialogOpen.value = true
+    return
+  }
+  router.push('/messages')
+}
+
+watch(
+  () => authStore.isLoggedIn,
+  (loggedIn) => {
+    if (loggedIn) void messageStore.refreshSummary()
+    else messageStore.clear()
+  },
+)
+
+onMounted(() => {
+  if (authStore.isLoggedIn) void messageStore.refreshSummary()
+})
 </script>
 
 <template>
@@ -120,22 +145,33 @@ function handleAvatarClick() {
         </el-input>
       </div>
 
-      <!-- 头像区域 -->
-      <div class="header-avatar" @click="handleAvatarClick" role="button" tabindex="0" @keyup.enter="handleAvatarClick">
-        <template v-if="userStore.isLoggedIn && userStore.userInfo">
-          <el-avatar
-            :size="34"
-            :src="userStore.userInfo.avatar_url ?? undefined"
-            class="avatar-img"
-          >
-            {{ userStore.userInfo.username?.[0] }}
-          </el-avatar>
-        </template>
-        <template v-else>
-          <div class="avatar-placeholder">
-            <MdiIcon :path="mdiAccount" size="18px" />
-          </div>
-        </template>
+      <!-- 消息入口 + 头像 -->
+      <div class="header-actions">
+        <button
+          type="button"
+          class="message-btn"
+          :aria-label="messageStore.badgeText ? `消息，${messageStore.badgeText} 条未读` : '消息'"
+          @click="handleMessageClick"
+        >
+          <MdiIcon :path="mdiBellOutline" size="22px" />
+          <span v-if="messageStore.badgeText" class="msg-badge">{{ messageStore.badgeText }}</span>
+        </button>
+        <div class="header-avatar" @click="handleAvatarClick" role="button" tabindex="0" @keyup.enter="handleAvatarClick">
+          <template v-if="userStore.isLoggedIn && userStore.userInfo">
+            <el-avatar
+              :size="34"
+              :src="userStore.userInfo.avatar_url ?? undefined"
+              class="avatar-img"
+            >
+              {{ userStore.userInfo.username?.[0] }}
+            </el-avatar>
+          </template>
+          <template v-else>
+            <div class="avatar-placeholder">
+              <MdiIcon :path="mdiAccount" size="18px" />
+            </div>
+          </template>
+        </div>
       </div>
     </div>
   </header>
@@ -261,10 +297,53 @@ function handleAvatarClick() {
   color: var(--hw-text-tertiary);
 }
 
-/* 头像 */
-.header-avatar {
+/* 消息 + 头像 */
+.header-actions {
   flex-shrink: 0;
   margin-left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.message-btn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--hw-text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.message-btn:hover {
+  background: var(--hw-bg-hover);
+  color: var(--theme-color);
+}
+
+.msg-badge {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--theme-color);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+.header-avatar {
+  flex-shrink: 0;
   color: var(--hw-text-primary);
   display: flex;
   align-items: center;

@@ -35,6 +35,37 @@ const router = createRouter({
       component: () => import('../views/FeedView.vue'),
     },
     {
+      path: '/messages',
+      name: 'messages',
+      component: () => import('../views/MessagesView.vue'),
+    },
+    {
+      path: '/messages/system',
+      name: 'messages-system',
+      component: () => import('../views/MessageSystemView.vue'),
+    },
+    {
+      path: '/messages/system/:id',
+      name: 'messages-system-detail',
+      component: () => import('../views/MessageDetailView.vue'),
+    },
+    {
+      path: '/messages/likes',
+      name: 'messages-likes',
+      component: () => import('../views/MessageLikesView.vue'),
+    },
+    {
+      path: '/messages/replies',
+      name: 'messages-replies',
+      component: () => import('../views/MessageRepliesView.vue'),
+    },
+    {
+      path: '/messages/followers',
+      name: 'messages-followers',
+      component: () => import('../views/MessageFollowersView.vue'),
+    },
+
+    {
       path: '/followers',
       name: 'followers',
       component: () => import('../views/FollowersView.vue'),

@@ -94,6 +94,11 @@ export const useAuthStore = defineStore('auth', () => {
 
     const userStore = useUserStore()
     userStore.logout()
+
+    // 延迟导入避免循环依赖
+    import('./message').then(({ useMessageStore }) => {
+      useMessageStore().clear()
+    }).catch(() => { /* ignore */ })
   }
 
   /** 检查 access token 是否过期并尝试刷新 */
