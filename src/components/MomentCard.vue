@@ -265,8 +265,6 @@ function closePreview() {
 .images {
   display: grid;
   gap: 6px;
-  border-radius: 12px;
-  overflow: hidden;
 }
 
 .images.count-1 {
@@ -293,6 +291,7 @@ function closePreview() {
   background: color-mix(in srgb, var(--hw-text-primary) 6%, transparent);
   aspect-ratio: 1;
   overflow: hidden;
+  border-radius: 12px;
   cursor: zoom-in;
 }
 
@@ -306,6 +305,7 @@ function closePreview() {
   height: 100%;
   object-fit: cover;
   display: block;
+  border-radius: 12px;
 }
 
 .att-card {
